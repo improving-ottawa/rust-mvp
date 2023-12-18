@@ -1,0 +1,20 @@
+name: pull-request-merged
+
+# runs on the main branch once any PR is merged into main
+# taken from: https://github.com/rust-sketches/ci-github-actions
+
+on:
+  pull_request:
+    types:
+      - closed
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  placeholder-job:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "placeholder job -- should create artifacts and deploy"
