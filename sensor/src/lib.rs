@@ -1,17 +1,21 @@
-/// A Sensor collects data from the Environment.
-trait Sensor<T> {
+use datum::Datum;
 
-    /// To get data out of a sensor, we call `sensor.value()`.
+/// A Sensor collects data from the Environment.
+trait Sensor {
+
+    /// To get data out of a sensor, we call `sensor.get_datum()`.
     ///
-    /// In the "real world", this would poll some actual physical device for data.
+    /// In the "real world", this would poll some actual physical sensor for a data point.
     ///
     /// In our example MVP, this queries the `Environment` for data.
-    fn get_value(&self) -> T;
+    fn get_datum(&self) -> Datum;
 
 }
 
 #[cfg(test)]
-mod tests {
+mod sensor_tests {
+    use datum::{DatumUnit, DatumValue};
+
     use super::*;
 
     struct Thermometer {}
@@ -22,17 +26,20 @@ mod tests {
         }
     }
 
-    impl Sensor<f32> for Thermometer {
-        fn get_value(&self) -> f32 {
+    impl Sensor for Thermometer {
+        fn get_datum(&self) -> Datum {
             // in our example, this should query the Environment
             // in this test, we just return a constant value
-            42.0
+            Datum::new_now(DatumValue::Float(42.0), Some(DatumUnit::DegreesC))
         }
     }
 
     #[test]
-    fn test_get_value() {
+    fn test_get_datum() {
         let thermometer = Thermometer::new();
-        assert_eq!(thermometer.get_value(), 42.0);
+        let datum = thermometer.get_datum();
+
+        assert_eq!(datum.value, DatumValue::Float(42.0));
+        assert_eq!(datum.unit, Some(DatumUnit::DegreesC));
     }
 }

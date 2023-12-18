@@ -9,6 +9,13 @@ version = "0.1.0"
 [[package]]
 name = "controller"
 version = "0.1.0"
+dependencies = [
+ "datum",
+]
+
+[[package]]
+name = "datum"
+version = "0.1.0"
 
 [[package]]
 name = "demo"
@@ -23,7 +30,13 @@ dependencies = [
 [[package]]
 name = "environment"
 version = "0.1.0"
+dependencies = [
+ "datum",
+]
 
 [[package]]
 name = "sensor"
 version = "0.1.0"
+dependencies = [
+ "datum",
+]
