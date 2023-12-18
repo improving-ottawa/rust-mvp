@@ -15,7 +15,7 @@ git config --local core.hooksPath .githooks
 You also need to make all hooks executable with
 
 ```shell
-git update-index --chmod=+x .githooks/*
+git update-index --assume-unchanged --chmod=+x .githooks/*
 ```
 
 We use `git` above, instead of `chmod` directly, for cross-platform compatibility.
