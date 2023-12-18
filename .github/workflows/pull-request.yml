@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-22.04
     # see: https://hub.docker.com/r/awwsmm/rust-ci/tags
     # and: https://github.com/rust-sketches/cd-github-actions
-    container: awwsmm/rust-ci:latest
+    # '0' is the latest version as of this commit
+    container: awwsmm/rust-ci:0
     steps:
       - uses: actions/checkout@v4
       - name: .githooks/pre-push
