@@ -10,28 +10,28 @@ use std::time::Instant;
 pub struct Datum {
     pub value: DatumValue,
     pub unit: Option<DatumUnit>,
-    pub timestamp: Instant
+    pub timestamp: Instant,
 }
 
 impl Datum {
     fn get_as_bool(&self) -> Option<bool> {
         match self.value {
             DatumValue::Bool(value) => Some(value),
-            _ => None
+            _ => None,
         }
     }
 
     fn get_as_float(&self) -> Option<f32> {
         match self.value {
             DatumValue::Float(value) => Some(value),
-            _ => None
+            _ => None,
         }
     }
 
     fn get_as_int(&self) -> Option<i32> {
         match self.value {
             DatumValue::Int(value) => Some(value),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -40,18 +40,22 @@ impl Datum {
 pub enum DatumValue {
     Bool(bool),
     Float(f32),
-    Int(i32)
+    Int(i32),
 }
 
 #[derive(PartialEq, Debug)]
 pub enum DatumUnit {
     PoweredOn,
-    DegreesC
+    DegreesC,
 }
 
 impl Datum {
     pub fn new(value: DatumValue, unit: Option<DatumUnit>, timestamp: Instant) -> Datum {
-        Datum { value, unit, timestamp }
+        Datum {
+            value,
+            unit,
+            timestamp,
+        }
     }
 
     pub fn new_now(value: DatumValue, unit: Option<DatumUnit>) -> Datum {

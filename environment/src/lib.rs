@@ -7,11 +7,10 @@ use datum::Datum;
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
 struct Environment {
-    attributes: HashMap<String, Datum>
+    attributes: HashMap<String, Datum>,
 }
 
 impl Environment {
-
     fn new() -> Environment {
         Environment::default()
     }
@@ -25,7 +24,6 @@ impl Environment {
     }
 
     // TODO add random data generation as necessary
-
 }
 
 #[cfg(test)]
@@ -53,5 +51,4 @@ mod env_tests {
         assert_eq!(value, &DatumValue::Int(42));
         assert_eq!(unit, &None);
     }
-
 }

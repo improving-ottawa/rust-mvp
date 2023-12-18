@@ -2,14 +2,12 @@ use datum::Datum;
 
 /// A Sensor collects data from the Environment.
 trait Sensor {
-
     /// To get data out of a sensor, we call `sensor.get_datum()`.
     ///
     /// In the "real world", this would poll some actual physical sensor for a data point.
     ///
     /// In our example MVP, this queries the `Environment` for data.
     fn get_datum(&self) -> Datum;
-
 }
 
 #[cfg(test)]

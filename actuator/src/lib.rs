@@ -1,6 +1,5 @@
 /// An Actuator mutates the Environment.
 trait Actuator {
-
     /// The `act` command tells the actuator to perform some action.
     ///
     /// The action can be anything (turning on a light, setting a thermostat target temperature to
@@ -11,5 +10,4 @@ trait Actuator {
     ///
     /// In our example MVP, this sends a command to the `Environment` which mutates its state.
     fn act(command: String);
-
 }

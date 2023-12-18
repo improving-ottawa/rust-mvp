@@ -10,15 +10,13 @@ use datum::Datum;
 ///
 /// The `Controller`'s state can be queried by an HTML frontend, so historic data
 struct Controller {
-
     /// Holds data queried from `Sensor`s
-    data: HashSet<SensorHistory>
-
+    data: HashSet<SensorHistory>,
 }
 
 struct SensorHistory {
     name: String,
-    data: Vec<Datum>
+    data: Vec<Datum>,
 }
 
 // TODO add getters here as needed once we need to query the Controller's state for the HTML page
