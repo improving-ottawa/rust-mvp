@@ -11,6 +11,16 @@ name = "controller"
 version = "0.1.0"
 
 [[package]]
+name = "demo"
+version = "0.1.0"
+dependencies = [
+ "actuator",
+ "controller",
+ "environment",
+ "sensor",
+]
+
+[[package]]
 name = "environment"
 version = "0.1.0"
 
