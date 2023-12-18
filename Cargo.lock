@@ -3,5 +3,17 @@
 version = 3
 
 [[package]]
-name = "rust-mvp"
+name = "actuator"
+version = "0.1.0"
+
+[[package]]
+name = "controller"
+version = "0.1.0"
+
+[[package]]
+name = "environment"
+version = "0.1.0"
+
+[[package]]
+name = "sensor"
 version = "0.1.0"
