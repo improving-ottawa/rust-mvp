@@ -9,11 +9,13 @@ use datum::Datum;
 /// constructs an appropriate command to send to that `Sensor`'s `Actuator`.
 ///
 /// The `Controller`'s state can be queried by an HTML frontend, so historic data
+#[allow(dead_code)] // remove ASAP
 struct Controller {
     /// Holds data queried from `Sensor`s
     data: HashSet<SensorHistory>,
 }
 
+#[allow(dead_code)] // remove ASAP
 struct SensorHistory {
     name: String,
     data: Vec<Datum>,

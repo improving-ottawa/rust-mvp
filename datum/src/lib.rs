@@ -13,6 +13,7 @@ pub struct Datum {
     pub timestamp: Instant,
 }
 
+#[allow(dead_code)] // remove ASAP
 impl Datum {
     fn get_as_bool(&self) -> Option<bool> {
         match self.value {

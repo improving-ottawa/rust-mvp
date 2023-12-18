@@ -10,6 +10,7 @@ struct Environment {
     attributes: HashMap<String, Datum>,
 }
 
+#[allow(dead_code)] // remove ASAP
 impl Environment {
     fn new() -> Environment {
         Environment::default()

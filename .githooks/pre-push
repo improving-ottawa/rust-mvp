@@ -46,7 +46,7 @@ rustup component add llvm-tools-preview
 
 export RUSTFLAGS="-Cinstrument-coverage" # create *.profraw files
 COVERAGE_DIR="target/coverage" # where the *.profraw files live
-export LLVM_PROFILE_FILE="$COVERAGE_DIR/grcov-%p-%m.profraw"
+export LLVM_PROFILE_FILE="../$COVERAGE_DIR/grcov-%p-%m.profraw"
 
 # check that the project builds
 echo "building..."
@@ -61,12 +61,12 @@ cargo test # generates *.profraw files because of '-C instrument-coverage'
 
 # generate human-readable HTML report
 # see: https://github.com/mozilla/grcov#man-grcov
-SOURCE_CODE_DIR="src" # where is the source code?
+SOURCE_CODE_DIR="." # where is the source code?
 COMPILED_CODE_DIR="target/debug" # where is the compiled code?
 HTML_OUTPUT_DIR="$COVERAGE_DIR"
 
 grcov "$COVERAGE_DIR" \
-  -s "$SOURCE_CODE_DIR" \
+  --source-dir "$SOURCE_CODE_DIR" \
   --binary-path "$COMPILED_CODE_DIR" \
   --branch \
   --excl-line "// coverage: off" \
