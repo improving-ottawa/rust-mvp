@@ -70,7 +70,7 @@ grcov "$COVERAGE_DIR" \
   --binary-path "$COMPILED_CODE_DIR" \
   --branch \
   --excl-line "// coverage: off" \
-  --excl-start "(// coverage: off|mod tests \{|fn main\(\) \{)" \
+  --excl-start "(// coverage: off|mod (tests|[a-zA-Z0-9_]+_tests) \{|fn main\(\) \{)" \
   --excl-stop "// coverage: on" \
   -t html \
   -o $HTML_OUTPUT_DIR
