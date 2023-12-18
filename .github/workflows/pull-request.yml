@@ -1,0 +1,25 @@
+name: pull-request
+
+# runs on new / reopened PRs and new commits to existing PRs
+# taken from: https://github.com/rust-sketches/ci-github-actions
+
+on: pull_request
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt-lint-build-test:
+    runs-on: ubuntu-22.04
+    # see: https://hub.docker.com/r/awwsmm/rust-ci/tags
+    # and: https://github.com/rust-sketches/cd-github-actions
+    # '0' is the latest version as of this commit
+    container: awwsmm/rust-ci:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: .githooks/pre-push
+        run: .githooks/pre-push
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: target/coverage/html/*.html # don't upload svg images each time

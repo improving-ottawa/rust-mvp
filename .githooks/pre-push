@@ -1,0 +1,86 @@
+#!/bin/sh
+
+# initial CI workflow taken from
+#   https://github.com/rust-sketches/ci-github-actions
+
+# exit when any command fails
+set -e
+
+# require test coverage of code
+# surround ignored code with markers like
+#   // coverage off
+#   let ignored = "this code is ignored"
+#   // coverage on
+COVERAGE_MIN="100.0" # %
+
+#-------------------------------------------------------------------------------
+#
+#  code cleanliness
+#
+#-------------------------------------------------------------------------------
+
+# check formatting
+echo "checking format with rustfmt..."
+rustup component add rustfmt # if it's not already installed
+cargo fmt --all -- --check
+
+# check for lint
+echo "removing lint with clippy..."
+rustup component add clippy # if it's not already installed
+cargo clippy --all-targets --all-features -- -D warnings
+
+# check documentation coverage whenever --show-coverage is stabilized
+# see: https://github.com/rust-lang/rust/issues/58154
+# cargo rustdoc -- --show-coverage
+
+#-------------------------------------------------------------------------------
+#
+#  build and test
+#
+#-------------------------------------------------------------------------------
+
+# set up grcov for test coverage analysis
+echo "setting up grcov..."
+which grcov || cargo install grcov
+rustup component add llvm-tools-preview
+
+export RUSTFLAGS="-Cinstrument-coverage" # create *.profraw files
+COVERAGE_DIR="target/coverage" # where the *.profraw files live
+export LLVM_PROFILE_FILE="$COVERAGE_DIR/grcov-%p-%m.profraw"
+
+# check that the project builds
+echo "building..."
+cargo build --verbose
+
+# clean the directory, then populate it
+rm -rf "$COVERAGE_DIR"
+
+# run tests
+echo "testing..."
+cargo test # generates *.profraw files because of '-C instrument-coverage'
+
+# generate human-readable HTML report
+# see: https://github.com/mozilla/grcov#man-grcov
+SOURCE_CODE_DIR="src" # where is the source code?
+COMPILED_CODE_DIR="target/debug" # where is the compiled code?
+HTML_OUTPUT_DIR="$COVERAGE_DIR"
+
+grcov "$COVERAGE_DIR" \
+  -s "$SOURCE_CODE_DIR" \
+  --binary-path "$COMPILED_CODE_DIR" \
+  --branch \
+  --excl-line "// coverage: off" \
+  --excl-start "(// coverage: off|mod tests \{|fn main\(\) \{)" \
+  --excl-stop "// coverage: on" \
+  -t html \
+  -o $HTML_OUTPUT_DIR
+
+# extract coverage percentage
+COVERAGE_PCT="$(sed -r 's/.*"message":"(.*)%".*/\1/g' "$COVERAGE_DIR/html/coverage.json")"
+
+if awk -v pct="$COVERAGE_PCT" -v min="$COVERAGE_MIN" 'BEGIN{exit !(pct >= min)}'; then
+  echo "Coverage limit of $COVERAGE_MIN satisfied ($COVERAGE_PCT >= $COVERAGE_MIN)."
+else
+  echo "Coverage limit of $COVERAGE_MIN not satisfied ($COVERAGE_PCT < $COVERAGE_MIN)."
+  exit 1
+fi
