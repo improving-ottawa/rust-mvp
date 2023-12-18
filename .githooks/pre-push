@@ -19,6 +19,9 @@ COVERAGE_MIN="100.0" # %
 #
 #-------------------------------------------------------------------------------
 
+# remove any old artifacts which may exist locally before starting
+cargo clean
+
 # check formatting
 echo "checking format with rustfmt..."
 rustup component add rustfmt # if it's not already installed

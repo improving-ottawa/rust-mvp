@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use datum::{Datum, Observable};
+use datum::Datum;
 
 /// A test-only example environment which produces data detected by `Sensor`s.
 ///
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
 struct Environment {
-    attributes: HashMap<Observable, Datum>,
+    attributes: HashMap<sensor::Id, Datum>,
 }
 
 #[allow(dead_code)] // remove ASAP
@@ -16,12 +16,12 @@ impl Environment {
         Environment::default()
     }
 
-    fn set(&mut self, attribute: &str, value: Datum) {
-        self.attributes.insert(Observable::new(attribute), value);
+    fn set(&mut self, id: &str, value: Datum) {
+        self.attributes.insert(sensor::Id::new(id), value);
     }
 
-    fn get(&self, attribute: &str) -> Option<&Datum> {
-        self.attributes.get(&Observable::new(attribute))
+    fn get(&self, id: &str) -> Option<&Datum> {
+        self.attributes.get(&sensor::Id::new(id))
     }
 
     // TODO add random data generation as necessary
@@ -37,7 +37,7 @@ mod env_tests {
     fn test_set_and_get() {
         let mut env = Environment::new();
 
-        let datum = Datum::new_now("name", DatumValue::Int(42), None);
+        let datum = Datum::new_now(DatumValue::Int(42), None);
 
         env.set("exists", datum);
 

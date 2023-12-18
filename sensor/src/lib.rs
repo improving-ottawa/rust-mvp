@@ -26,12 +26,12 @@ impl Name {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Eq, Hash)]
 pub struct Id(String);
 
 impl Id {
     #[allow(dead_code)] // remove ASAP
-    fn new(id: &str) -> Id {
+    pub fn new(id: &str) -> Id {
         Id(String::from(id))
     }
 }
@@ -54,7 +54,7 @@ mod sensor_tests {
         fn get_datum(&self) -> Datum {
             // in our example, this should query the Environment
             // in this test, we just return a constant value
-            Datum::new_now("name", DatumValue::Float(42.0), Some(DatumUnit::DegreesC))
+            Datum::new_now(DatumValue::Float(42.0), Some(DatumUnit::DegreesC))
         }
 
         fn get_name(&self) -> Name {

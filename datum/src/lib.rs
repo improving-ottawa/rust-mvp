@@ -1,27 +1,13 @@
 use std::time::Instant;
 
-/// An `Observable` is a user-friendly description of something that can be measured / observed.
-///
-/// For example, "garage door open", "living room temperature", "basement humidity".
-#[derive(PartialEq, Eq, Hash)]
-pub struct Observable(String);
-
-impl Observable {
-    pub fn new(name: &str) -> Observable {
-        Observable(String::from(name))
-    }
-}
-
 /// A `Datum` is a singular data point; a single measurement / observation of some `Attribute`.
 ///
-/// It contains the `name` of the `Observable`, a typed `value`, a `unit` associated with that
-/// `value`, and a `timestamp`.
+/// It contains a typed `value`, a `unit` associated with that `value`, and a `timestamp`.
 ///
 /// Note that it is not generically-typed (no `T` parameter). Data is communicated across HTTP / TCP
 /// and is consumed by a frontend HTML app, so we will lose type safety at those interfaces. Storing
 /// these data points in `Datum` structs anticipates this complication and tries to tackle it head-on.
 pub struct Datum {
-    pub name: Observable,
     pub value: DatumValue,
     pub unit: Option<DatumUnit>,
     pub timestamp: Instant,
@@ -67,22 +53,16 @@ pub enum DatumUnit {
 }
 
 impl Datum {
-    pub fn new(
-        name: &str,
-        value: DatumValue,
-        unit: Option<DatumUnit>,
-        timestamp: Instant,
-    ) -> Datum {
+    pub fn new(value: DatumValue, unit: Option<DatumUnit>, timestamp: Instant) -> Datum {
         Datum {
-            name: Observable::new(name),
             value,
             unit,
             timestamp,
         }
     }
 
-    pub fn new_now(name: &str, value: DatumValue, unit: Option<DatumUnit>) -> Datum {
-        Datum::new(name, value, unit, Instant::now())
+    pub fn new_now(value: DatumValue, unit: Option<DatumUnit>) -> Datum {
+        Datum::new(value, unit, Instant::now())
     }
 }
 
@@ -91,7 +71,7 @@ mod datum_tests {
     use super::*;
 
     fn create(value: DatumValue) -> Datum {
-        Datum::new("the name", value, None, Instant::now())
+        Datum::new(value, None, Instant::now())
     }
 
     #[test]
