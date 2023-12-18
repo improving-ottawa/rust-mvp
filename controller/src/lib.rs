@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use datum::Datum;
 
@@ -12,12 +12,15 @@ use datum::Datum;
 #[allow(dead_code)] // remove ASAP
 struct Controller {
     /// Holds data queried from `Sensor`s
-    data: HashSet<SensorHistory>,
+    data: HashMap<sensor::Id, SensorHistory>,
 }
 
 #[allow(dead_code)] // remove ASAP
+/// The `SensorHistory` holds the unique `id`, the user-friendly `name`, and some history of
+/// `data` points.
 struct SensorHistory {
-    name: String,
+    id: sensor::Id,
+    name: sensor::Name,
     data: Vec<Datum>,
 }
 
