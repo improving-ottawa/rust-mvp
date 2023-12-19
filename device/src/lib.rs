@@ -17,7 +17,7 @@ pub trait Device {
         let name = &self.get_name().0;
         let domain = format!("{}._tcp.local.", group);
 
-        println!("\nRegistering new device via mDNS at {}.{}", name, domain);
+        println!("Registering new device via mDNS at {}.{}", name, domain);
 
         let my_service = ServiceInfo::new(
             domain.as_str(),
@@ -38,7 +38,7 @@ pub trait Device {
         let address = format!("{}:{}", host, port);
         let name = &self.get_name().0;
 
-        println!("\nCreating new device {} at {}", name, address);
+        println!("Creating new device '{}' at {}", name, address);
 
         TcpListener::bind(address).unwrap()
     }
