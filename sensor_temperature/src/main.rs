@@ -3,7 +3,6 @@ use std::env;
 use actix_web::{App, HttpServer};
 use libmdns::Responder;
 
-use sensor::Sensor;
 use sensor_temperature::get_datum;
 
 #[actix_web::main]
@@ -21,9 +20,7 @@ async fn main() -> std::io::Result<()> {
         &["path=/datum"],
     );
 
-    HttpServer::new(|| {
-        App::new().service(get_datum)
-    })
+    HttpServer::new(|| App::new().service(get_datum))
         .bind(sensor_addr)?
         .run()
         .await

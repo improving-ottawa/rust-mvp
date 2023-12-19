@@ -4,16 +4,11 @@ use uuid::Uuid;
 use datum::{Datum, DatumUnit, DatumValue};
 use sensor::{Id, Name, Sensor};
 
-struct TemperatureSensor {
-
-}
+struct TemperatureSensor {}
 
 impl Sensor for TemperatureSensor {
     fn get_datum(&self) -> Datum {
-        Datum::new_now(
-            DatumValue::Float(25.0),
-            Some(DatumUnit::DegreesC)
-        )
+        Datum::new_now(DatumValue::Float(25.0), Some(DatumUnit::DegreesC))
     }
 
     fn get_name(&self) -> Name {
