@@ -1,7 +1,7 @@
 use datum::Datum;
 
 /// A Sensor collects data from the Environment.
-trait Sensor {
+pub trait Sensor {
     /// To get data out of a sensor, we call `sensor.get_datum()`.
     ///
     /// In the "real world", this would poll some actual physical sensor for a data point.
@@ -21,7 +21,7 @@ pub struct Name(String);
 
 impl Name {
     #[allow(dead_code)] // remove ASAP
-    fn new(name: &str) -> Name {
+    pub fn new(name: &str) -> Name {
         Name(String::from(name))
     }
 }

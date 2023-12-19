@@ -6,5 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-rt = "2.2"
+actix-service = "2.0"
+actix-server = "2.3"
+actix-web = "4.0"
+awc = { version = "3.0.0-beta.11", features = [ "openssl" ] }
 datum = { path = "../datum" }
+futures = "0.3"
+mdns = "3.0.0"
+pin-utils = "0.1"
+reqwest = "0.11"
 sensor = { path = "../sensor" }
+tokio = { version = "1", features = ["full"] }
+
