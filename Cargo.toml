@@ -1,10 +1,13 @@
 [workspace]
 
 members = [
-    "sensor",
+    "device",
     "controller",
-    "actuator",
     "environment",
     "demo",
-    "datum"
+    "datum",
+    "sensor",
+    "sensor_temperature",
+    "actuator",
+    "actuator_temperature"
 ]

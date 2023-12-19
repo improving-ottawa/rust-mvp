@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 datum = { path = "../datum" }
-sensor = { path = "../sensor" }
+device = { path = "../device" }

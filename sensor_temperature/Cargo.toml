@@ -1,5 +1,5 @@
 [package]
-name = "sensor"
+name = "sensor_temperature"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 datum = { path = "../datum" }
 device = { path = "../device" }
+sensor = { path = "../sensor" }

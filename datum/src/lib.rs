@@ -1,4 +1,6 @@
-use std::time::Instant;
+use std::fmt::{Display, Formatter};
+
+use chrono::{DateTime, Utc};
 
 /// A `Datum` is a singular data point; a single measurement / observation of some `Attribute`.
 ///
@@ -10,7 +12,19 @@ use std::time::Instant;
 pub struct Datum {
     pub value: DatumValue,
     pub unit: Option<DatumUnit>,
-    pub timestamp: Instant,
+    pub timestamp: DateTime<Utc>,
+}
+
+impl Display for Datum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}@{}@{}",
+            self.value,
+            self.unit.unwrap_or_default(),
+            self.timestamp.to_rfc3339()
+        )
+    }
 }
 
 #[allow(dead_code)] // remove ASAP
@@ -39,30 +53,78 @@ impl Datum {
     // TODO add other 'get_as_x' methods here as necessary
 }
 
-#[derive(PartialEq, Debug)]
+impl From<bool> for DatumValue {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+
+impl From<f32> for DatumValue {
+    fn from(value: f32) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<i32> for DatumValue {
+    fn from(value: i32) -> Self {
+        Self::Int(value)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum DatumValue {
     Bool(bool),
     Float(f32),
     Int(i32),
 }
 
-#[derive(PartialEq, Debug)]
+impl Display for DatumValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let string = match self {
+            DatumValue::Bool(value) => value.to_string(),
+            DatumValue::Float(value) => value.to_string(),
+            DatumValue::Int(value) => value.to_string(),
+        };
+
+        write!(f, "{}", string)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Copy, Default)]
 pub enum DatumUnit {
+    #[default]
+    Unitless,
     PoweredOn,
     DegreesC,
 }
 
+impl Display for DatumUnit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let string = match self {
+            DatumUnit::Unitless => "",
+            DatumUnit::PoweredOn => "⏼",
+            DatumUnit::DegreesC => "°C",
+        };
+
+        write!(f, "{}", string)
+    }
+}
+
 impl Datum {
-    pub fn new(value: DatumValue, unit: Option<DatumUnit>, timestamp: Instant) -> Datum {
+    pub fn new<T: Into<DatumValue>>(
+        value: T,
+        unit: Option<DatumUnit>,
+        timestamp: DateTime<Utc>,
+    ) -> Datum {
         Datum {
-            value,
+            value: value.into(),
             unit,
             timestamp,
         }
     }
 
-    pub fn new_now(value: DatumValue, unit: Option<DatumUnit>) -> Datum {
-        Datum::new(value, unit, Instant::now())
+    pub fn new_now<T: Into<DatumValue>>(value: T, unit: Option<DatumUnit>) -> Datum {
+        Datum::new(value, unit, Utc::now())
     }
 }
 
@@ -70,43 +132,43 @@ impl Datum {
 mod datum_tests {
     use super::*;
 
-    fn create(value: DatumValue) -> Datum {
-        Datum::new(value, None, Instant::now())
+    fn create<T: Into<DatumValue>>(value: T) -> Datum {
+        Datum::new(value, None, Utc::now())
     }
 
     #[test]
     fn test_create_datum_bool() {
-        let datum = create(DatumValue::Bool(true));
+        let datum = create(true);
         assert_eq!(datum.get_as_bool(), Some(true));
     }
 
     #[test]
     fn test_create_datum_bool_failure() {
-        let datum = create(DatumValue::Float(42.0));
+        let datum = create(42.0);
         assert_eq!(datum.get_as_bool(), None);
     }
 
     #[test]
     fn test_create_datum_float() {
-        let datum = create(DatumValue::Float(42.0));
+        let datum = create(42.0);
         assert_eq!(datum.get_as_float(), Some(42.0));
     }
 
     #[test]
     fn test_create_datum_float_failure() {
-        let datum = create(DatumValue::Bool(true));
+        let datum = create(true);
         assert_eq!(datum.get_as_float(), None);
     }
 
     #[test]
     fn test_create_datum_int() {
-        let datum = create(DatumValue::Int(19));
+        let datum = create(19);
         assert_eq!(datum.get_as_int(), Some(19));
     }
 
     #[test]
     fn test_create_datum_int_failure() {
-        let datum = create(DatumValue::Bool(true));
+        let datum = create(true);
         assert_eq!(datum.get_as_int(), None);
     }
 }
