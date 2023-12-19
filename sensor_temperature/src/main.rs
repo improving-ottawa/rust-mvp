@@ -23,7 +23,7 @@ impl Sensor for TemperatureSensor {
     }
 
     fn get_id(&self) -> Id {
-       Id::new(Uuid::new_v4().to_string().as_str())
+        Id::new(Uuid::new_v4().to_string().as_str())
     }
 }
 

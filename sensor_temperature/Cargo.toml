@@ -1,0 +1,13 @@
+[package]
+name = "sensor_temperature"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+datum = { path = "../datum" }
+sensor = { path = "../sensor" }
+actix-web = "4.4.0"
+libmdns = "0.7.5"
+uuid = {version = "1.6.1", features = ["v4", "serde"]}

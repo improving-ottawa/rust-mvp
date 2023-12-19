@@ -2,6 +2,7 @@
 
 members = [
     "sensor",
+    "sensor_temperature",
     "controller",
     "actuator",
     "environment",
