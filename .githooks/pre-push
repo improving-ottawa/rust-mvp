@@ -11,7 +11,7 @@ set -e
 #   // coverage off
 #   let ignored = "this code is ignored"
 #   // coverage on
-COVERAGE_MIN="30.0" # FIXME BRING THIS BACK UP TO 100.0 ASAP
+COVERAGE_MIN="62.0" # FIXME BRING THIS BACK UP TO 100.0 ASAP
 
 #-------------------------------------------------------------------------------
 #
@@ -72,7 +72,7 @@ grcov "$COVERAGE_DIR" \
   --source-dir "$SOURCE_CODE_DIR" \
   --binary-path "$COMPILED_CODE_DIR" \
   --branch \
-  --excl-line "// coverage: off|#\[.*\]" \
+  --excl-line "#\[.*\]" \
   --excl-start "(// coverage: off|mod (tests|[a-zA-Z0-9_]+_tests) \{|fn main\(\))" \
   --excl-stop "// coverage: on" \
   -t html \

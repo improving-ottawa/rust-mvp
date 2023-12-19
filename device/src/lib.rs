@@ -50,7 +50,7 @@ pub trait Device {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Name(pub String);
 
 impl Name {
@@ -60,7 +60,7 @@ impl Name {
     }
 }
 
-#[derive(PartialEq, Debug, Eq, Hash)]
+#[derive(PartialEq, Debug, Eq, Hash, Clone)]
 pub struct Id(pub String);
 
 impl Id {

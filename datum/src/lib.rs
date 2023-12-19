@@ -171,4 +171,22 @@ mod datum_tests {
         let datum = create(true);
         assert_eq!(datum.get_as_int(), None);
     }
+
+    #[test]
+    fn test_datum_display() {
+        let now = Utc::now();
+        let now_as_str = now.to_rfc3339();
+
+        let datum = Datum::new(true, None, now);
+        let expected = format!("true@@{}", now_as_str);
+        assert_eq!(datum.to_string(), expected);
+
+        let datum = Datum::new(42.3, Some(DatumUnit::PoweredOn), now);
+        let expected = format!("42.3@⏼@{}", now_as_str);
+        assert_eq!(datum.to_string(), expected);
+
+        let datum = Datum::new(19, Some(DatumUnit::DegreesC), now);
+        let expected = format!("19@°C@{}", now_as_str);
+        assert_eq!(datum.to_string(), expected);
+    }
 }

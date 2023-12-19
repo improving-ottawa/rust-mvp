@@ -65,3 +65,27 @@ struct SensorHistory {
     name: Name,
     data: Vec<Datum>,
 }
+
+#[cfg(test)]
+mod controller_tests {
+    use super::*;
+
+    #[test]
+    fn test_get_name() {
+        let controller = Controller::new();
+        assert_eq!(controller.get_name(), &Name::new("controller"));
+    }
+
+    #[test]
+    fn test_get_id() {
+        let controller = Controller::new();
+        assert_eq!(controller.get_id(), &Id::new("controller"));
+    }
+
+    #[test]
+    fn test_default() {
+        let controller = Controller::default();
+        assert_eq!(controller.get_name(), &Name::new("controller"));
+        assert_eq!(controller.get_id(), &Id::new("controller"));
+    }
+}
