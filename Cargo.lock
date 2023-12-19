@@ -208,7 +208,16 @@ dependencies = [
 name = "actuator"
 version = "0.1.0"
 dependencies = [
- "sensor",
+ "device",
+]
+
+[[package]]
+name = "actuator_temperature"
+version = "0.1.0"
+dependencies = [
+ "actuator",
+ "datum",
+ "device",
 ]
 
 [[package]]
@@ -697,6 +706,7 @@ dependencies = [
  "actix-web",
  "awc",
  "datum",
+ "device",
  "futures",
  "mdns",
  "pin-utils",
@@ -786,6 +796,9 @@ dependencies = [
 name = "demo"
 version = "0.1.0"
 dependencies = [
+ "actuator",
+ "actuator_temperature",
+ "device",
  "local-ip-address",
  "sensor",
  "sensor_temperature",
@@ -812,6 +825,13 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "device"
+version = "0.1.0"
+dependencies = [
+ "mdns-sd",
 ]
 
 [[package]]
@@ -854,7 +874,7 @@ name = "environment"
 version = "0.1.0"
 dependencies = [
  "datum",
- "sensor",
+ "device",
 ]
 
 [[package]]
@@ -2054,7 +2074,7 @@ name = "sensor"
 version = "0.1.0"
 dependencies = [
  "datum",
- "mdns-sd",
+ "device",
 ]
 
 [[package]]
@@ -2062,6 +2082,7 @@ name = "sensor_temperature"
 version = "0.1.0"
 dependencies = [
  "datum",
+ "device",
  "sensor",
 ]
 

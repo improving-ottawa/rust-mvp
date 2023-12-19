@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 datum = { path = "../datum" }
 sensor = { path = "../sensor" }
+device = { path = "../device" }
 
 actix-rt = "2.2"
 actix-service = "2.0"

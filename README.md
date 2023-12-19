@@ -22,6 +22,10 @@ An actuator receives commands from the [controller](#controller) and has an effe
 
 Concrete (demo) implementations of actuators are held in directories with names starting with `actuator_`. Those crates are binary crates which can be containerized and run on a container runtime like Docker.
 
+### device
+
+This is a library crate holding logic common to any mDNS device on the network.
+
 ### controller
 
 This is a binary crate which provides a concrete implementation of a _controller_, including all of its domain and communication logic. In this demo, there is only a single controller, which acts as the "hub" in this IoT system.

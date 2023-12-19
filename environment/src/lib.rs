@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use datum::Datum;
+use device::Id;
 
 /// A test-only example environment which produces data detected by `Sensor`s.
 ///
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
 struct Environment {
-    attributes: HashMap<sensor::Id, Datum>,
+    attributes: HashMap<Id, Datum>,
 }
 
 #[allow(dead_code)] // remove ASAP
@@ -17,11 +18,11 @@ impl Environment {
     }
 
     fn set(&mut self, id: &str, value: Datum) {
-        self.attributes.insert(sensor::Id::new(id), value);
+        self.attributes.insert(Id::new(id), value);
     }
 
     fn get(&self, id: &str) -> Option<&Datum> {
-        self.attributes.get(&sensor::Id::new(id))
+        self.attributes.get(&Id::new(id))
     }
 
     // TODO add random data generation as necessary

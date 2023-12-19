@@ -3,13 +3,15 @@ use std::io::{Error, ErrorKind};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use datum::Datum;
 use futures::stream::StreamExt;
 use mdns::discover;
 use mdns::RecordKind;
 use pin_utils::pin_mut;
 use reqwest::Client;
 use tokio::time;
+
+use datum::Datum;
+use device::{Id, Name};
 
 /// The Controller queries the `Sensor`s for `Datum`s and sends commands to the `Actuator`s.
 ///
@@ -21,15 +23,15 @@ use tokio::time;
 #[allow(dead_code)] // remove ASAP
 struct Controller {
     /// Holds data queried from `Sensor`s
-    data: HashMap<sensor::Id, SensorHistory>,
+    data: HashMap<Id, SensorHistory>,
 }
 
 #[allow(dead_code)] // remove ASAP
 /// The `SensorHistory` holds the unique `id`, the user-friendly `name`, and some history of
 /// `data` points.
 struct SensorHistory {
-    id: sensor::Id,
-    name: sensor::Name,
+    id: Id,
+    name: Name,
     data: Vec<Datum>,
 }
 
