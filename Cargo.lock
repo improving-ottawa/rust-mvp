@@ -786,10 +786,10 @@ dependencies = [
 name = "demo"
 version = "0.1.0"
 dependencies = [
- "actuator",
- "controller",
- "environment",
+ "local-ip-address",
  "sensor",
+ "sensor_temperature",
+ "uuid",
 ]
 
 [[package]]
@@ -2054,6 +2054,7 @@ name = "sensor"
 version = "0.1.0"
 dependencies = [
  "datum",
+ "mdns-sd",
 ]
 
 [[package]]
@@ -2061,10 +2062,7 @@ name = "sensor_temperature"
 version = "0.1.0"
 dependencies = [
  "datum",
- "local-ip-address",
- "mdns-sd",
  "sensor",
- "uuid",
 ]
 
 [[package]]

@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 datum = { path = "../datum" }
+
+mdns-sd = "0.10.1"

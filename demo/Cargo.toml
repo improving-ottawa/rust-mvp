@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 sensor = { path = "../sensor" }
-controller = { path = "../controller" }
-actuator = { path = "../actuator" }
-environment = { path = "../environment" }
+sensor_temperature = { path = "../sensor_temperature" }
+
+local-ip-address = "0.5.6"
+uuid = {version = "1.6.1", features = ["v4", "serde"]}
