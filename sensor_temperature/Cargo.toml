@@ -6,11 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+datum = { path = "../datum" }
+sensor = { path = "../sensor" }
+
 actix-server = "2.3.0"
 actix-service = "2.0"
 actix-web = "4.4.0"
-datum = { path = "../datum" }
-sensor = { path = "../sensor" }
 libmdns = "0.7.5"
 tokio = { version = "1", features = ["full"] }
 uuid = {version = "1.6.1", features = ["v4", "serde"]}

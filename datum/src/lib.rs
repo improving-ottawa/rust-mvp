@@ -39,6 +39,24 @@ impl Datum {
     // TODO add other 'get_as_x' methods here as necessary
 }
 
+impl From<bool> for DatumValue {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+
+impl From<f32> for DatumValue {
+    fn from(value: f32) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<i32> for DatumValue {
+    fn from(value: i32) -> Self {
+        Self::Int(value)
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub enum DatumValue {
     Bool(bool),
@@ -53,15 +71,19 @@ pub enum DatumUnit {
 }
 
 impl Datum {
-    pub fn new(value: DatumValue, unit: Option<DatumUnit>, timestamp: Instant) -> Datum {
+    pub fn new<T: Into<DatumValue>>(
+        value: T,
+        unit: Option<DatumUnit>,
+        timestamp: Instant,
+    ) -> Datum {
         Datum {
-            value,
+            value: value.into(),
             unit,
             timestamp,
         }
     }
 
-    pub fn new_now(value: DatumValue, unit: Option<DatumUnit>) -> Datum {
+    pub fn new_now<T: Into<DatumValue>>(value: T, unit: Option<DatumUnit>) -> Datum {
         Datum::new(value, unit, Instant::now())
     }
 }
@@ -70,43 +92,43 @@ impl Datum {
 mod datum_tests {
     use super::*;
 
-    fn create(value: DatumValue) -> Datum {
+    fn create<T: Into<DatumValue>>(value: T) -> Datum {
         Datum::new(value, None, Instant::now())
     }
 
     #[test]
     fn test_create_datum_bool() {
-        let datum = create(DatumValue::Bool(true));
+        let datum = create(true);
         assert_eq!(datum.get_as_bool(), Some(true));
     }
 
     #[test]
     fn test_create_datum_bool_failure() {
-        let datum = create(DatumValue::Float(42.0));
+        let datum = create(42.0);
         assert_eq!(datum.get_as_bool(), None);
     }
 
     #[test]
     fn test_create_datum_float() {
-        let datum = create(DatumValue::Float(42.0));
+        let datum = create(42.0);
         assert_eq!(datum.get_as_float(), Some(42.0));
     }
 
     #[test]
     fn test_create_datum_float_failure() {
-        let datum = create(DatumValue::Bool(true));
+        let datum = create(true);
         assert_eq!(datum.get_as_float(), None);
     }
 
     #[test]
     fn test_create_datum_int() {
-        let datum = create(DatumValue::Int(19));
+        let datum = create(19);
         assert_eq!(datum.get_as_int(), Some(19));
     }
 
     #[test]
     fn test_create_datum_int_failure() {
-        let datum = create(DatumValue::Bool(true));
+        let datum = create(true);
         assert_eq!(datum.get_as_int(), None);
     }
 }
