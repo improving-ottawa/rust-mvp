@@ -8,7 +8,6 @@ use mdns::discover;
 use mdns::RecordKind;
 use pin_utils::pin_mut;
 use reqwest::Client;
-// TODO use for client http requests
 use tokio::{signal, time};
 
 #[derive(Debug, Clone)]
