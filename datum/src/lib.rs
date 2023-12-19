@@ -1,4 +1,6 @@
-use std::time::Instant;
+use std::fmt::{Display, Formatter};
+
+use chrono::{DateTime, Utc};
 
 /// A `Datum` is a singular data point; a single measurement / observation of some `Attribute`.
 ///
@@ -10,7 +12,19 @@ use std::time::Instant;
 pub struct Datum {
     pub value: DatumValue,
     pub unit: Option<DatumUnit>,
-    pub timestamp: Instant,
+    pub timestamp: DateTime<Utc>,
+}
+
+impl Display for Datum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}@{}@{}",
+            self.value,
+            self.unit.unwrap_or_default(),
+            self.timestamp.to_rfc3339()
+        )
+    }
 }
 
 #[allow(dead_code)] // remove ASAP
@@ -57,24 +71,50 @@ impl From<i32> for DatumValue {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum DatumValue {
     Bool(bool),
     Float(f32),
     Int(i32),
 }
 
-#[derive(PartialEq, Debug)]
+impl Display for DatumValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let string = match self {
+            DatumValue::Bool(value) => value.to_string(),
+            DatumValue::Float(value) => value.to_string(),
+            DatumValue::Int(value) => value.to_string(),
+        };
+
+        write!(f, "{}", string)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Copy, Default)]
 pub enum DatumUnit {
+    #[default]
+    Unitless,
     PoweredOn,
     DegreesC,
+}
+
+impl Display for DatumUnit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let string = match self {
+            DatumUnit::Unitless => "",
+            DatumUnit::PoweredOn => "⏼",
+            DatumUnit::DegreesC => "°C",
+        };
+
+        write!(f, "{}", string)
+    }
 }
 
 impl Datum {
     pub fn new<T: Into<DatumValue>>(
         value: T,
         unit: Option<DatumUnit>,
-        timestamp: Instant,
+        timestamp: DateTime<Utc>,
     ) -> Datum {
         Datum {
             value: value.into(),
@@ -84,7 +124,7 @@ impl Datum {
     }
 
     pub fn new_now<T: Into<DatumValue>>(value: T, unit: Option<DatumUnit>) -> Datum {
-        Datum::new(value, unit, Instant::now())
+        Datum::new(value, unit, Utc::now())
     }
 }
 
@@ -93,7 +133,7 @@ mod datum_tests {
     use super::*;
 
     fn create<T: Into<DatumValue>>(value: T) -> Datum {
-        Datum::new(value, None, Instant::now())
+        Datum::new(value, None, Utc::now())
     }
 
     #[test]

@@ -1,10 +1,10 @@
-use actix_web::{get, HttpResponse, Responder};
-use uuid::Uuid;
-
 use datum::{Datum, DatumUnit};
 use sensor::{Id, Name, Sensor};
 
-struct TemperatureSensor {}
+pub struct TemperatureSensor {
+    id: String,
+    name: String,
+}
 
 impl Sensor for TemperatureSensor {
     fn get_datum(&self) -> Datum {
@@ -12,15 +12,19 @@ impl Sensor for TemperatureSensor {
     }
 
     fn get_name(&self) -> Name {
-        Name::new("TemperatureSensor")
+        Name::new(self.name.as_str())
     }
 
     fn get_id(&self) -> Id {
-        Id::new(Uuid::new_v4().to_string().as_str())
+        Id::new(self.id.as_str())
     }
 }
 
-#[get("/datum")]
-pub async fn get_datum() -> impl Responder {
-    HttpResponse::Ok().body("Sensor Datum")
+impl TemperatureSensor {
+    pub fn new(id: &str, name: &str) -> TemperatureSensor {
+        TemperatureSensor {
+            id: String::from(id),
+            name: String::from(name),
+        }
+    }
 }
