@@ -1,32 +1,10 @@
 use std::env;
-use actix_web::{App, get, HttpResponse, HttpServer, Responder as ActixResponder};
+
+use actix_web::{App, HttpServer};
 use libmdns::Responder;
-use uuid::Uuid;
-use datum::{Datum, DatumUnit, DatumValue};
-use sensor::{Id, Name, Sensor};
 
-
-struct TemperatureSensor {
-
-}
-
-impl Sensor for TemperatureSensor {
-    fn get_datum(&self) -> Datum {
-        Datum::new_now(
-            DatumValue::Float(25.0),
-            Some(DatumUnit::DegreesC)
-        )
-    }
-
-    fn get_name(&self) -> Name {
-        Name::new("TemperatureSensor")
-    }
-
-    fn get_id(&self) -> Id {
-        Id::new(Uuid::new_v4().to_string().as_str())
-    }
-}
-
+use sensor::Sensor;
+use sensor_temperature::get_datum;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -49,9 +27,4 @@ async fn main() -> std::io::Result<()> {
         .bind(sensor_addr)?
         .run()
         .await
-}
-
-#[get("/datum")]
-async fn get_datum() -> impl ActixResponder {
-    HttpResponse::Ok().body("Sensor Datum")
 }
