@@ -9,7 +9,6 @@ edition = "2021"
 datum = { path = "../datum" }
 sensor = { path = "../sensor" }
 
-actix-web = "4.4.0"
-libmdns = "0.7.5"
 local-ip-address = "0.5.6"
+mdns-sd = "0.10.1"
 uuid = {version = "1.6.1", features = ["v4", "serde"]}
