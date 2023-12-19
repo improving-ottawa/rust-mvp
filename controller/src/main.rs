@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use futures::stream::StreamExt;
-use tokio::signal;
-
 use controller::{discover_sensors, query_sensors};
+use tokio::signal;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {

@@ -3,12 +3,13 @@ use std::io::{Error, ErrorKind};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use mdns::{discover, RecordKind};
+use datum::Datum;
+use futures::stream::StreamExt;
+use mdns::discover;
+use mdns::RecordKind;
 use pin_utils::pin_mut;
 use reqwest::Client;
 use tokio::time;
-
-use datum::Datum;
 
 /// The Controller queries the `Sensor`s for `Datum`s and sends commands to the `Actuator`s.
 ///
@@ -35,7 +36,7 @@ struct SensorHistory {
 // TODO add getters here as needed once we need to query the Controller's state for the HTML page
 
 #[derive(Debug, Clone)]
-struct Sensor {
+pub struct Sensor {
     name: String,
     host: String,
     port: u16,
@@ -79,7 +80,7 @@ pub async fn discover_sensors(sensors: Sensors) -> std::io::Result<()> {
                                 sensor.port = response.port().unwrap();
                             }
                             RecordKind::PTR(full_domain) => {
-                                sensor.name = full_domain.split(".").next().unwrap().to_string();
+                                sensor.name = full_domain.split('.').next().unwrap().to_string();
                             }
                             _ => {}
                         }
@@ -120,7 +121,7 @@ pub async fn query_sensors(sensors: Sensors) -> Result<(), Box<dyn std::error::E
                 }
             };
 
-            let status = response.status().clone();
+            let status = response.status();
 
             match response.text().await {
                 Ok(body) => {

@@ -1,9 +1,7 @@
-use std::env;
-
 use actix_web::{App, HttpServer};
 use libmdns::Responder;
-
 use sensor_temperature::get_datum;
+use std::env;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

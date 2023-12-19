@@ -1,8 +1,7 @@
-use actix_web::{get, HttpResponse, Responder};
-use uuid::Uuid;
-
+use actix_web::{get, HttpResponse, Responder as ActixResponder};
 use datum::{Datum, DatumUnit, DatumValue};
 use sensor::{Id, Name, Sensor};
+use uuid::Uuid;
 
 struct TemperatureSensor {}
 
@@ -21,6 +20,6 @@ impl Sensor for TemperatureSensor {
 }
 
 #[get("/datum")]
-async fn get_datum() -> impl Responder {
+pub async fn get_datum() -> impl ActixResponder {
     HttpResponse::Ok().body("Sensor Datum")
 }
