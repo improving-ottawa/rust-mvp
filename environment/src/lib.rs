@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use rand::Rng;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -101,22 +101,19 @@ impl Environment {
         Ok(())
     }
 
-    fn extract_command(&self, request: &str) -> (Id, String) {
+    fn extract_command(&self, _request: &str) -> (Id, String) {
         // TODO: Implement actual command extraction from the request
         // This is a placeholder implementation
         (Id::new("_id"), "command".to_string());
         todo!("Implement command extraction")
     }
 
-    fn execute_command(&self, id: &Id, command: &str) -> Option<Datum> {
+    fn execute_command(&self, id: &Id, _command: &str) -> Option<Datum> {
         // TODO: Implement actual command execution logic
         // Maybe the command should be an struct or enum with a type and a value?
 
         let mut attributes = self.attributes.lock().unwrap();
         if let Some(datum) = attributes.get_mut(id) {
-            // Mutate the datum based on the command
-            // Then call set method
-            // For now, just return the datum
             Some(datum.clone())
         } else {
             None
