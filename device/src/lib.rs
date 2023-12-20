@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::net::{IpAddr, TcpListener};
 
 use mdns_sd::ServiceInfo;
@@ -14,14 +15,14 @@ pub trait Device {
     fn register(&self, ip: IpAddr, port: u16, group: &str) {
         let mdns = mdns_sd::ServiceDaemon::new().unwrap();
         let host = ip.clone().to_string();
-        let name = &self.get_name().0;
+        let name = self.get_name();
         let domain = format!("{}._tcp.local.", group);
 
         println!("Registering new device via mDNS at {}.{}", name, domain);
 
         let my_service = ServiceInfo::new(
             domain.as_str(),
-            name.as_str(),
+            name.0.as_str(),
             host.as_str(),
             ip,
             port,
@@ -36,7 +37,7 @@ pub trait Device {
     fn listener(&self, ip: IpAddr, port: u16) -> TcpListener {
         let host = ip.clone().to_string();
         let address = format!("{}:{}", host, port);
-        let name = &self.get_name().0;
+        let name = &self.get_name();
 
         println!("Creating new device '{}' at {}", name, address);
 
@@ -53,6 +54,12 @@ pub trait Device {
 #[derive(PartialEq, Debug)]
 pub struct Name(pub String);
 
+impl Display for Name {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl Name {
     #[allow(dead_code)] // remove ASAP
     pub fn new(name: &str) -> Name {
@@ -62,6 +69,12 @@ impl Name {
 
 #[derive(PartialEq, Debug, Eq, Hash, Clone)]
 pub struct Id(pub String);
+
+impl Display for Id {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl Id {
     #[allow(dead_code)] // remove ASAP

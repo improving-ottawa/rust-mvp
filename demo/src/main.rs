@@ -14,7 +14,7 @@ fn main() {
 
     let port = 8787;
     let temperature_sensor_id = Id::new(&Uuid::new_v4().to_string());
-    let full_id = format!("temperature_{}", temperature_sensor_id.0);
+    let full_id = format!("temperature_{}", temperature_sensor_id);
     let name = Name::new(&full_id);
 
     let sensor = TemperatureSensor::new(temperature_sensor_id.clone(), name);
@@ -26,7 +26,7 @@ fn main() {
 
     let port = 9898;
     let temperature_actuator_id = Id::new(&Uuid::new_v4().to_string());
-    let full_id = format!("temperature_{}", temperature_actuator_id.0);
+    let full_id = format!("temperature_{}", temperature_actuator_id);
     let name = Name::new(&full_id);
 
     let actuator = TemperatureActuator::new(temperature_actuator_id.clone(), name);

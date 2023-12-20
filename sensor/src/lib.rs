@@ -20,7 +20,7 @@ pub trait Sensor: Device {
             let mut request = String::new();
 
             BufReader::new(&mut stream).read_line(&mut request).unwrap();
-            println!("{} received request: {}", self.get_name().0, request.trim());
+            println!("{} received request: {}", self.get_name(), request.trim());
 
             let contents = self.get_datum().to_string();
             let ack = format!(

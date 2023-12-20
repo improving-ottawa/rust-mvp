@@ -107,7 +107,7 @@ impl Controller {
     }
 
     pub fn read_sensor(&self, id: Id) -> std::io::Result<()> {
-        println!("Reading Sensor Id: {}", id.0.clone());
+        println!("Reading Sensor Id: {}", id);
 
         if !self.contact_info.contains_key(&id) {
             println!("Sensor Id not found in contact_info.");
@@ -138,7 +138,7 @@ impl Controller {
     }
 
     pub fn command_actuator(&self, id: Id) -> std::io::Result<()> {
-        println!("Commanding Actuator Id: {}", id.0.clone());
+        println!("Commanding Actuator Id: {}", id);
 
         if !self.contact_info.contains_key(&id) {
             println!("Actuator Id not found in contact_info.");
