@@ -182,3 +182,30 @@ struct SensorHistory {
     name: Name,
     data: Vec<Datum>,
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
+    // TODO finish once api return time finalized
+    #[test]
+    fn test_read_sensor() {
+        let controller = Controller::new();
+        let id = Id::new("dummy_id");
+        let result = controller.read_sensor(id).unwrap();
+
+        assert_eq!(result, ());
+    }
+
+    // TODO finish once api return time finalized
+    #[test]
+    fn test_cmd_actuator() {
+        let controller = Controller::new();
+        let id = Id::new("dummy_id");
+        let result = controller.command_actuator(id).unwrap();
+
+        assert_eq!(result, ());
+    }
+}
