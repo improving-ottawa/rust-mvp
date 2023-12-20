@@ -135,7 +135,7 @@ impl Environment {
 #[cfg(test)]
 mod env_tests {
     use super::*;
-    use chrono::{TimeZone, Utc};
+    use chrono::Utc;
     use datum::{DatumUnit, DatumValue};
     use regex::Regex;
 
