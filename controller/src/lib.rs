@@ -73,21 +73,18 @@ impl Controller {
 
         while let Ok(event) = receiver.recv() {
             if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
+                let fullname = info.get_fullname();
+                let group = info.get_type();
+                let host = info.get_hostname();
+                let port = info.get_port();
+
                 println!(
-                    "[discover] controller has discovered: {} at {:?}:{}",
-                    info.get_fullname(),
-                    info.get_addresses(),
-                    info.get_port()
+                    "[discover] controller found: {} at {:?}:{}",
+                    fullname, host, port
                 );
+                self.commit_to_memory(fullname, group, host, port);
 
-                self.commit_to_memory(
-                    info.get_fullname(),
-                    info.get_type(),
-                    info.get_hostname(),
-                    info.get_port(),
-                );
-
-                break; // FIXME why is this here?
+                break; // FIXME why is this here? Doesn't this kill the discovery process?
             }
         }
 
