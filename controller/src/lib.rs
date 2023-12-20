@@ -188,7 +188,6 @@ struct SensorHistory {
 mod tests {
     use super::*;
 
-
     // TODO finish once api return time finalized
     #[test]
     fn test_read_sensor() {
