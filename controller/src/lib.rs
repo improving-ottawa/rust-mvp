@@ -20,13 +20,13 @@ pub struct Controller {
     /// Holds data queried from `Sensor`s
     data: HashMap<Id, SensorHistory>,
     /// Contains mapping of Id their Contact information
-    contact_info: HashMap<Id, ContactInformation>
+    contact_info: HashMap<Id, ContactInformation>,
 }
 
 #[derive(Debug)]
 struct ContactInformation {
     host: String,
-    port: String
+    port: String,
 }
 
 impl Device for Controller {
@@ -45,7 +45,7 @@ impl Default for Controller {
             name: Name::new("controller"),
             id: Id::new("controller"),
             data: HashMap::new(),
-            contact_info: HashMap::new()
+            contact_info: HashMap::new(),
         }
     }
 }
@@ -56,7 +56,7 @@ impl Controller {
     }
 
     /// Loops continually, attempting to discover new devices on the network.
-    pub fn discover(&mut self, group: &str) -> std::io::Result<()>{
+    pub fn discover(&mut self, group: &str) -> std::io::Result<()> {
         let mdns = mdns_sd::ServiceDaemon::new().unwrap();
 
         let service_type = format!("{}._tcp.local.", group);
@@ -64,15 +64,19 @@ impl Controller {
 
         while let Ok(event) = receiver.recv() {
             if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
-                println!("The controller has discovered: {} at {:?}:{}", info.get_fullname(),
-                         info.get_addresses(), info.get_port());
+                println!(
+                    "The controller has discovered: {} at {:?}:{}",
+                    info.get_fullname(),
+                    info.get_addresses(),
+                    info.get_port()
+                );
 
-                let full_id = info.get_fullname().split(".").next().unwrap_or_default();
-                let id_str = full_id.split("_").nth(1).unwrap_or_default();
+                let full_id = info.get_fullname().split('.').next().unwrap_or_default();
+                let id_str = full_id.split('_').nth(1).unwrap_or_default();
 
                 let id = Id::new(id_str);
 
-                match info.get_type().split(".").next().unwrap_or_default() {
+                match info.get_type().split('.').next().unwrap_or_default() {
                     "_sensor" => {
                         let sensor_info = ContactInformation {
                             host: info.get_hostname().to_string(),
@@ -82,7 +86,7 @@ impl Controller {
                         if !self.contact_info.contains_key(&id) {
                             self.contact_info.insert(id.clone(), sensor_info);
                         }
-                    },
+                    }
                     "_actuator" => {
                         let actuator_info = ContactInformation {
                             host: info.get_hostname().to_string(),
@@ -103,7 +107,6 @@ impl Controller {
     }
 
     pub fn read_sensor(&self, id: Id) -> std::io::Result<()> {
-        // Get sensor from list
         println!("Reading Sensor Id: {}", id.0.clone());
 
         if !self.contact_info.contains_key(&id) {
@@ -126,7 +129,10 @@ impl Controller {
         let mut response = Vec::new();
         stream.read_to_end(&mut response).unwrap();
 
-        println!("response: {}", str::from_utf8(&response).unwrap_or("Failed to read response"));
+        println!(
+            "response: {}",
+            str::from_utf8(&response).unwrap_or("Failed to read response")
+        );
 
         Ok(())
     }
@@ -151,7 +157,7 @@ impl Controller {
 
         let request = format!(
             "POST HTTP/1.1\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
-           content_type, content_length, body
+            content_type, content_length, body
         );
 
         stream.write_all(request.as_bytes()).unwrap();
@@ -159,7 +165,10 @@ impl Controller {
         let mut response = Vec::new();
         stream.read_to_end(&mut response).unwrap();
 
-        println!("response: {}", str::from_utf8(&response).unwrap_or("Failed to read response"));
+        println!(
+            "response: {}",
+            str::from_utf8(&response).unwrap_or("Failed to read response")
+        );
 
         Ok(())
     }

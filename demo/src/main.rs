@@ -36,34 +36,38 @@ fn main() {
         actuator.respond(listener);
     });
 
-
     let controller = Arc::new(Mutex::new(Controller::new()));
 
     // Spawn a looping thread to continuously check for newly connected devices
     let discovery_ctrl = controller.clone();
-    std::thread::spawn(move || {
-        loop {
-            {
-                discovery_ctrl.lock().unwrap().discover("_sensor").unwrap();
-                discovery_ctrl.lock().unwrap().discover("_actuator").unwrap();
-            }
-            std::thread::sleep(Duration::from_secs(5));
+    std::thread::spawn(move || loop {
+        {
+            discovery_ctrl.lock().unwrap().discover("_sensor").unwrap();
+            discovery_ctrl
+                .lock()
+                .unwrap()
+                .discover("_actuator")
+                .unwrap();
         }
+        std::thread::sleep(Duration::from_secs(5));
     });
-
 
     // A testing loop where we lock the controller, call the api, release lock, sleep and loop
     let api_ctrl = controller.clone();
     loop {
         {
             let controller = api_ctrl.lock().expect("failed to lock");
-            controller.read_sensor(temperature_sensor_id.clone()).unwrap()
+            controller
+                .read_sensor(temperature_sensor_id.clone())
+                .unwrap()
         }
         std::thread::sleep(Duration::from_secs(2));
 
         {
             let controller = api_ctrl.lock().expect("failed to lock");
-            controller.command_actuator(temperature_actuator_id.clone()).unwrap()
+            controller
+                .command_actuator(temperature_actuator_id.clone())
+                .unwrap()
         }
         std::thread::sleep(Duration::from_secs(2));
     }
