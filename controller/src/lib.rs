@@ -19,19 +19,19 @@ pub struct Controller {
     id: Id,
     /// Holds data queried from `Sensor`s
     data: HashMap<Id, SensorHistory>,
-    /// Maps `Device` `Id`s to their contact information
-    contact_info: HashMap<Id, ContactInformation>,
+    /// Maps `Device` `Id`s to their addresses
+    addresses: HashMap<Id, Address>,
 }
 
 #[derive(Debug)]
-struct ContactInformation {
+struct Address {
     host: String,
     port: String,
 }
 
-impl ContactInformation {
-    fn new(host: &str, port: u16) -> ContactInformation {
-        ContactInformation {
+impl Address {
+    fn new(host: &str, port: u16) -> Address {
+        Address {
             host: host.to_string(),
             port: port.to_string(),
         }
@@ -54,7 +54,7 @@ impl Default for Controller {
             name: Name::new("controller"),
             id: Id::new("controller"),
             data: HashMap::new(),
-            contact_info: HashMap::new(),
+            addresses: HashMap::new(),
         }
     }
 }
@@ -92,8 +92,8 @@ impl Controller {
         Ok(())
     }
 
-    /// Adds the contact info of a `Device` to this `Controller`s memory.
-    fn commit_to_memory(&mut self, fullname: &str, group: &str, hostname: &str, port: u16) {
+    /// Adds the address of a `Device` to this `Controller`s memory.
+    fn commit_to_memory(&mut self, fullname: &str, group: &str, host: &str, port: u16) {
         // hello_world.how_are.you => hello_world
         let full_id = fullname.split('.').next().unwrap_or_default();
 
@@ -109,8 +109,8 @@ impl Controller {
         let group = group.split('.').next().unwrap_or_default();
 
         if group == "_sensor" || group == "_actuator" {
-            let info = ContactInformation::new(hostname, port);
-            self.contact_info.insert(id.clone(), info);
+            let info = Address::new(host, port);
+            self.addresses.insert(id.clone(), info);
         } else {
             panic!(
                 "[commit_to_memory] unknown group '{}' (expected '_sensor' or '_actuator')",
@@ -123,13 +123,13 @@ impl Controller {
     pub fn get_device_address(&self, id: Id) -> Result<String, String> {
         println!("[get_device_address] looking for Id: {}", id);
 
-        if !self.contact_info.contains_key(&id) {
-            let msg = format!("Device Id '{}' not found in contact info", id);
+        if !self.addresses.contains_key(&id) {
+            let msg = format!("Device Id '{}' not found in addresses", id);
             println!("[get_device_address] {}", msg);
             return Err(msg);
         }
 
-        let device = self.contact_info.get(&id).unwrap();
+        let device = self.addresses.get(&id).unwrap();
 
         // sensor.host has a '.' at the end, i.e. "192.168.1.21."
         // this removes any trailing '.' characters

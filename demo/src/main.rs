@@ -11,7 +11,12 @@ use sensor::Sensor;
 use sensor_temperature::TemperatureSensor;
 
 fn main() {
+    // in the local demo, all devices have the same ip (localhost)
     let ip = local_ip_address::local_ip().unwrap();
+
+    // --------------------------------------------------------------------------------
+    // spin up a sensor
+    // --------------------------------------------------------------------------------
 
     let port = 8787;
     let temperature_sensor_id = Id::new(&Uuid::new_v4().to_string());
@@ -25,6 +30,10 @@ fn main() {
         sensor.respond(listener);
     });
 
+    // --------------------------------------------------------------------------------
+    // spin up an actuator
+    // --------------------------------------------------------------------------------
+
     let port = 9898;
     let temperature_actuator_id = Id::new(&Uuid::new_v4().to_string());
     let full_id = format!("temperature_{}", temperature_actuator_id);
@@ -36,6 +45,10 @@ fn main() {
     std::thread::spawn(move || {
         actuator.respond(listener);
     });
+
+    // --------------------------------------------------------------------------------
+    // spin up the controller
+    // --------------------------------------------------------------------------------
 
     let controller = Arc::new(Mutex::new(Controller::new()));
 
