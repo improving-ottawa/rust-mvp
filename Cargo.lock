@@ -103,6 +103,9 @@ dependencies = [
  "device",
  "mdns-sd",
  "once_cell",
+ "sensor",
+ "sensor_temperature",
+ "uuid",
 ]
 
 [[package]]
