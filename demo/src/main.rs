@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
 use uuid::Uuid;
 
 use actuator::Actuator;
@@ -58,11 +59,14 @@ fn main() {
         {
             let controller = api_ctrl.lock().expect("failed to lock");
 
-            let address = controller
-                .get_sensor_address(temperature_actuator_id.clone())
-                .expect("couldn't retrieve sensor address");
+            let address = controller.get_sensor_address(temperature_sensor_id.clone());
 
-            controller.read_sensor(address.as_str()).unwrap();
+            match address {
+                Ok(address) => {
+                    controller.read_sensor(address.as_str()).unwrap();
+                }
+                Err(msg) => println!("{}", msg),
+            }
         }
         std::thread::sleep(Duration::from_secs(2));
 

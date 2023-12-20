@@ -172,8 +172,7 @@ impl Controller {
         );
 
         // parse the response and return it
-
-        Datum::parse(response)
+        Datum::parse(response.lines().last().unwrap_or_default())
     }
 
     pub fn command_actuator(&self, id: Id) -> std::io::Result<()> {
