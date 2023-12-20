@@ -102,10 +102,7 @@ impl Environment {
     }
 
     fn extract_command(&self, _request: &str) -> (Id, String) {
-        // TODO: Implement actual command extraction from the request
-        // This is a placeholder implementation
-        (Id::new("_id"), "command".to_string());
-        todo!("Implement command extraction")
+        todo!()
     }
 
     fn execute_command(&self, id: &Id, _command: &str) -> Option<Datum> {
@@ -113,11 +110,8 @@ impl Environment {
         // Maybe the command should be an struct or enum with a type and a value?
 
         let mut attributes = self.attributes.lock().unwrap();
-        if let Some(datum) = attributes.get_mut(id) {
-            Some(datum.clone())
-        } else {
-            None
-        }
+        
+        attributes.get_mut(id).map(|datum| datum.clone())
     }
 
     fn extract_id(&self, request: &str) -> Option<Id> {
@@ -135,7 +129,7 @@ impl Environment {
 #[cfg(test)]
 mod env_tests {
     use super::*;
-    use chrono::Utc;
+    use chrono::{Utc, DateTime};
     use datum::{DatumUnit, DatumValue};
     use regex::Regex;
 
