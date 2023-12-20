@@ -1,9 +1,10 @@
-use chrono::Utc;
-use rand::Rng;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
+
+use chrono::Utc;
+use rand::Rng;
 
 use datum::{Datum, DatumUnit, DatumValue};
 use device::Id;
@@ -25,35 +26,50 @@ impl Environment {
     }
 
     fn set(&self, id: Id, value: Datum) {
+        // FIXME are we worried about deadlocks here?
         let mut attributes = self.attributes.lock().unwrap();
         attributes.insert(id, value);
     }
 
     fn get(&self, id: &Id) -> Datum {
+        // FIXME are we worried about deadlocks here?
         let mut attributes = self.attributes.lock().unwrap();
         match attributes.get(id) {
             Some(datum) => datum.clone(),
             None => {
-                let random_datum = self.generate_random_datum();
+                // FIXME we need to return the type (bool, f32, i32) of data the Sensor expects
+                let random_unit = Some(DatumUnit::Unitless);
+                let random_datum = Environment::generate_random_datum(random_unit);
                 attributes.insert(id.clone(), random_datum.clone()); // Insert the random Datum into attributes
                 random_datum
             }
         }
     }
 
-    fn generate_random_datum(&self) -> Datum {
-        let mut rng = rand::thread_rng();
-        // generate a random datum
-        Datum {
-            value: match rng.gen_range(0..3) {
-                0 => DatumValue::Bool(rng.gen()),
-                1 => DatumValue::Float(rng.gen()),
-                2 => DatumValue::Int(rng.gen()),
-                _ => DatumValue::Int(0),
-            },
-            unit: Some(DatumUnit::Unitless), // or generate a random unit if needed
-            timestamp: Utc::now(),
+    fn generate_random_datum(unit: Option<DatumUnit>) -> Datum {
+        match rand::thread_rng().gen_range(0..3) {
+            0 => Environment::generate_random_bool(unit),
+            1 => Environment::generate_random_f32(unit),
+            _ => Environment::generate_random_i32(unit),
         }
+    }
+
+    fn generate_random_bool(unit: Option<DatumUnit>) -> Datum {
+        let mut rng = rand::thread_rng();
+        let value = DatumValue::Bool(rng.gen());
+        Datum::new(value, unit, Utc::now())
+    }
+
+    fn generate_random_f32(unit: Option<DatumUnit>) -> Datum {
+        let mut rng = rand::thread_rng();
+        let value = DatumValue::Float(rng.gen());
+        Datum::new(value, unit, Utc::now())
+    }
+
+    fn generate_random_i32(unit: Option<DatumUnit>) -> Datum {
+        let mut rng = rand::thread_rng();
+        let value = DatumValue::Int(rng.gen());
+        Datum::new(value, unit, Utc::now())
     }
 
     pub fn handle_request(&self, request: &str) -> String {
@@ -90,11 +106,12 @@ impl Environment {
     }
 
     fn handle_client(&self, mut stream: TcpStream) -> std::io::Result<()> {
-        let mut buffer = [0; 1024];
+        let mut request = Vec::new();
+        stream.read_to_end(&mut request).unwrap();
 
-        stream.read_exact(&mut buffer)?;
-
-        let request = std::str::from_utf8(&buffer).unwrap();
+        let request = std::str::from_utf8(&request)
+            .map(|s| s.trim())
+            .unwrap_or("Failed to read response");
 
         let response = self.handle_request(request);
 
@@ -124,54 +141,38 @@ impl Environment {
             None
         }
     }
-
-    // TODO add random data generation as necessary
 }
 
 #[cfg(test)]
 mod env_tests {
-    use super::*;
-    use chrono::{DateTime, Utc};
-    use datum::{DatumUnit, DatumValue};
+    use chrono::Utc;
     use regex::Regex;
+
+    use datum::DatumUnit;
+
+    use super::*;
 
     #[test]
     fn test_set_and_get_datum() {
         let environment = Environment::new();
         let id = Id::new("test_id");
-        let datum = Datum {
-            value: DatumValue::Int(42),
-            unit: Some(DatumUnit::Unitless),
-            timestamp: Utc::now(),
-        };
 
-        // Test set
-        environment.set(id.clone(), datum.clone());
-        // Test get
-        let retrieved = environment.get(&id);
-        assert_eq!(retrieved.value, DatumValue::Int(42));
-        assert_eq!(retrieved.unit, Some(DatumUnit::Unitless));
+        let actual = Datum::new(24, Some(DatumUnit::Unitless), Utc::now());
+        environment.set(id.clone(), actual.clone());
+        let expected = environment.get(&id);
+
+        assert_eq!(actual.value, expected.value);
+        assert_eq!(actual.unit, expected.unit);
+        assert_eq!(actual.timestamp, expected.timestamp);
     }
 
     #[test]
-    fn test_handle_request() {
+    fn test_handle_get_request() {
         let environment = Environment::new();
-        let _id = Id::new("test_id");
-        let date_str = "2023-01-01T00:00:00Z";
-        let specific_datetime: DateTime<Utc> = DateTime::parse_from_rfc3339(date_str)
-            .expect("Invalid date format")
-            .with_timezone(&Utc);
-
-        let _test_datum = Datum {
-            value: DatumValue::Int(42),
-            unit: Some(DatumUnit::Unitless),
-            timestamp: specific_datetime,
-        };
-
-        // Simulating a GET request
 
         fn contains_datum(response: String) -> bool {
-            let datum_regex = Regex::new(r"Datum").unwrap();
+            let datum_regex =
+                Regex::new(r"Datum \{ value: .*, unit: .*, timestamp: .* \}").unwrap();
             datum_regex.is_match(&response)
         }
 
@@ -179,8 +180,12 @@ mod env_tests {
         let get_response = environment.handle_request(get_request);
 
         assert!(contains_datum(get_response));
+    }
 
-        // Simulating a request to an undefined route
+    #[test]
+    fn test_handle_get_request_undefined() {
+        let environment = Environment::new();
+
         let undefined_request = "GET /undefined";
         let undefined_response = environment.handle_request(undefined_request);
         assert_eq!(undefined_response, "HTTP/1.1 404 Not Found\r\n\r\n");
