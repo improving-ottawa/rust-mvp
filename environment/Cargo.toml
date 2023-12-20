@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 datum = { path = "../datum" }
 device = { path = "../device" }
+chrono = { version = "0.4.31", features = [] }
+rand = "0.8.5"
+regex = "1.10.2"
