@@ -57,9 +57,12 @@ fn main() {
     loop {
         {
             let controller = api_ctrl.lock().expect("failed to lock");
-            controller
-                .read_sensor(temperature_sensor_id.clone())
-                .unwrap()
+
+            let address = controller
+                .get_sensor_address(temperature_actuator_id.clone())
+                .expect("couldn't retrieve sensor address");
+
+            controller.read_sensor(address.as_str()).unwrap();
         }
         std::thread::sleep(Duration::from_secs(2));
 

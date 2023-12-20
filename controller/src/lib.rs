@@ -71,34 +71,13 @@ impl Controller {
                     info.get_port()
                 );
 
-                let full_id = info.get_fullname().split('.').next().unwrap_or_default();
-                let id_str = full_id.split('_').nth(1).unwrap_or_default();
+                self.commit_to_memory(
+                    info.get_fullname(),
+                    info.get_type(),
+                    info.get_hostname(),
+                    info.get_port(),
+                );
 
-                let id = Id::new(id_str);
-
-                match info.get_type().split('.').next().unwrap_or_default() {
-                    "_sensor" => {
-                        let sensor_info = ContactInformation {
-                            host: info.get_hostname().to_string(),
-                            port: info.get_port().to_string(),
-                        };
-
-                        if !self.contact_info.contains_key(&id) {
-                            self.contact_info.insert(id.clone(), sensor_info);
-                        }
-                    }
-                    "_actuator" => {
-                        let actuator_info = ContactInformation {
-                            host: info.get_hostname().to_string(),
-                            port: info.get_port().to_string(),
-                        };
-
-                        if !self.contact_info.contains_key(&id) {
-                            self.contact_info.insert(id.clone(), actuator_info);
-                        }
-                    }
-                    _ => {}
-                }
                 break;
             }
         }
@@ -106,22 +85,76 @@ impl Controller {
         Ok(())
     }
 
-    pub fn read_sensor(&self, id: Id) -> std::io::Result<()> {
-        println!("Reading Sensor Id: {}", id);
+    /// Private internal method to add the contact info of a `Device` to this `Controller`s memory.
+    fn commit_to_memory(&mut self, fullname: &str, group: &str, hostname: &str, port: u16) {
+        // hello_world.how_are.you => hello_world
+        let full_id = fullname.split('.').next().unwrap_or_default();
+
+        // hello_world => world
+        let id_str = full_id.split('_').nth(1).unwrap_or_default();
+
+        let id = Id::new(id_str);
+
+        println!(
+            "[commit_to_memory] fullname '{}' converted to id '{}'",
+            fullname, id_str
+        );
+
+        match group.split('.').next().unwrap_or_default() {
+            "_sensor" => {
+                let sensor_info = ContactInformation {
+                    host: hostname.to_string(),
+                    port: port.to_string(),
+                };
+
+                if !self.contact_info.contains_key(&id) {
+                    self.contact_info.insert(id.clone(), sensor_info);
+                }
+            }
+            "_actuator" => {
+                let actuator_info = ContactInformation {
+                    host: hostname.to_string(),
+                    port: port.to_string(),
+                };
+
+                if !self.contact_info.contains_key(&id) {
+                    self.contact_info.insert(id.clone(), actuator_info);
+                }
+            }
+            other => panic!(
+                "[commit_to_memory] unknown group '{}' (expected '_sensor' or '_actuator')",
+                other
+            ),
+        }
+    }
+
+    /// Retrieves this `Sensor`'s address from its `Id.
+    pub fn get_sensor_address(&self, id: Id) -> Result<String, String> {
+        println!("[get_sensor_address] looking for Id: {}", id);
 
         if !self.contact_info.contains_key(&id) {
-            println!("Sensor Id not found in contact_info.");
-            return Ok(());
+            let msg = format!("Sensor Id '{}' not found in contact info", id);
+            println!("{}", msg);
+            return Err(msg);
         }
 
         let sensor = self.contact_info.get(&id).unwrap();
 
+        // sensor.host has a '.' at the end, i.e. "192.168.1.21."
+        // this removes any trailing '.' characters
         let trimmed_host = sensor.host.trim_end_matches('.');
-        let url = format!("{}:{}", trimmed_host, sensor.port);
 
-        println!("Calling url {}", url.clone());
+        Ok(format!("{}:{}", trimmed_host, sensor.port))
+    }
 
-        let mut stream = TcpStream::connect(url).unwrap();
+    /// Attempts to get the latest `Datum` from the `Sensor` with the specified `Id`.
+    pub fn read_sensor(&self, address: &str) -> Result<Datum, String> {
+        println!("[read_sensor] connecting to url: {}", address);
+
+        let mut stream = TcpStream::connect(address).unwrap();
+
+        // send the minimum possible payload. We basically just want to ping the Sensor
+        // see: https://stackoverflow.com/a/9734866
         let request = "GET / HTTP/1.1\r\n\r\n";
 
         stream.write_all(request.as_bytes()).unwrap();
@@ -129,12 +162,18 @@ impl Controller {
         let mut response = Vec::new();
         stream.read_to_end(&mut response).unwrap();
 
+        let response = str::from_utf8(&response)
+            .map(|s| s.trim())
+            .unwrap_or("Failed to read response");
+
         println!(
-            "response: {}",
-            str::from_utf8(&response).unwrap_or("Failed to read response")
+            "[read_sensor] response from url {}:\n----------\n{}\n----------",
+            address, response
         );
 
-        Ok(())
+        // parse the response and return it
+
+        Datum::parse(response)
     }
 
     pub fn command_actuator(&self, id: Id) -> std::io::Result<()> {
@@ -184,7 +223,7 @@ struct SensorHistory {
 }
 
 #[cfg(test)]
-mod tests {
+mod controller_tests {
     use super::*;
 
     // Delete once return results finalized in Controller. Just needed for CI to pass
@@ -192,14 +231,18 @@ mod tests {
         a + b
     }
 
-    // TODO finish once api return time finalized
     #[test]
-    fn test_read_sensor() {
-        let controller = Controller::new();
-        let id = Id::new("dummy_id");
-        controller.read_sensor(id).unwrap();
+    fn test_get_sensor_address() {
+        let mut controller = Controller::new();
+        let fullname = "hello_world.how_are.you";
+        let id = Id::new("world");
 
-        assert_eq!(5, add(2, 3));
+        controller.commit_to_memory(fullname, "_sensor", "localhost", 8080);
+
+        assert_eq!(
+            controller.get_sensor_address(id),
+            Ok(String::from("localhost:8080"))
+        );
     }
 
     // TODO finish once api return time finalized
