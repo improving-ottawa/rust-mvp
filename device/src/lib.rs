@@ -60,7 +60,7 @@ impl Name {
     }
 }
 
-#[derive(PartialEq, Debug, Eq, Hash)]
+#[derive(PartialEq, Debug, Eq, Hash, Clone)]
 pub struct Id(pub String);
 
 impl Id {
