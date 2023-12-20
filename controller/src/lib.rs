@@ -19,7 +19,7 @@ pub struct Controller {
     id: Id,
     /// Holds data queried from `Sensor`s
     data: HashMap<Id, SensorHistory>,
-    /// Contains mapping of Id their Contact information
+    /// Maps `Device` `Id`s to their contact information
     contact_info: HashMap<Id, ContactInformation>,
 }
 
@@ -27,6 +27,15 @@ pub struct Controller {
 struct ContactInformation {
     host: String,
     port: String,
+}
+
+impl ContactInformation {
+    fn new(host: &str, port: u16) -> ContactInformation {
+        ContactInformation {
+            host: host.to_string(),
+            port: port.to_string(),
+        }
+    }
 }
 
 impl Device for Controller {
@@ -65,7 +74,7 @@ impl Controller {
         while let Ok(event) = receiver.recv() {
             if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
                 println!(
-                    "The controller has discovered: {} at {:?}:{}",
+                    "[discover] controller has discovered: {} at {:?}:{}",
                     info.get_fullname(),
                     info.get_addresses(),
                     info.get_port()
@@ -78,7 +87,7 @@ impl Controller {
                     info.get_port(),
                 );
 
-                break;
+                break; // FIXME why is this here?
             }
         }
 
@@ -92,7 +101,6 @@ impl Controller {
 
         // hello_world => world
         let id_str = full_id.split('_').nth(1).unwrap_or_default();
-
         let id = Id::new(id_str);
 
         println!(
@@ -100,31 +108,16 @@ impl Controller {
             fullname, id_str
         );
 
-        match group.split('.').next().unwrap_or_default() {
-            "_sensor" => {
-                let sensor_info = ContactInformation {
-                    host: hostname.to_string(),
-                    port: port.to_string(),
-                };
+        let group = group.split('.').next().unwrap_or_default();
 
-                if !self.contact_info.contains_key(&id) {
-                    self.contact_info.insert(id.clone(), sensor_info);
-                }
-            }
-            "_actuator" => {
-                let actuator_info = ContactInformation {
-                    host: hostname.to_string(),
-                    port: port.to_string(),
-                };
-
-                if !self.contact_info.contains_key(&id) {
-                    self.contact_info.insert(id.clone(), actuator_info);
-                }
-            }
-            other => panic!(
+        if group == "_sensor" || group == "_actuator" {
+            let info = ContactInformation::new(hostname, port);
+            self.contact_info.insert(id.clone(), info);
+        } else {
+            panic!(
                 "[commit_to_memory] unknown group '{}' (expected '_sensor' or '_actuator')",
-                other
-            ),
+                group
+            )
         }
     }
 
@@ -134,7 +127,7 @@ impl Controller {
 
         if !self.contact_info.contains_key(&id) {
             let msg = format!("Sensor Id '{}' not found in contact info", id);
-            println!("{}", msg);
+            println!("[get_sensor_address] {}", msg);
             return Err(msg);
         }
 
