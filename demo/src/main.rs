@@ -59,11 +59,11 @@ fn main() {
         {
             let controller = api_ctrl.lock().expect("failed to lock");
 
-            let address = controller.get_sensor_address(temperature_sensor_id.clone());
+            let address = controller.get_device_address(temperature_sensor_id.clone());
 
             match address {
                 Ok(address) => {
-                    controller.read_sensor(address.as_str()).unwrap();
+                    Controller::read_sensor(address.as_str()).unwrap();
                 }
                 Err(msg) => println!("{}", msg),
             }
@@ -72,9 +72,15 @@ fn main() {
 
         {
             let controller = api_ctrl.lock().expect("failed to lock");
-            controller
-                .command_actuator(temperature_actuator_id.clone())
-                .unwrap()
+
+            let address = controller.get_device_address(temperature_actuator_id.clone());
+
+            match address {
+                Ok(address) => {
+                    Controller::command_actuator(address.as_str()).unwrap();
+                }
+                Err(msg) => println!("{}", msg),
+            }
         }
         std::thread::sleep(Duration::from_secs(2));
     }
