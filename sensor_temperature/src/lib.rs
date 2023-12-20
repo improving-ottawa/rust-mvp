@@ -20,7 +20,7 @@ impl Device for TemperatureSensor {
 impl Sensor for TemperatureSensor {
     fn get_datum(&self) -> Datum {
         // TODO should query Environment
-        Datum::new_now(25.0, Some(DatumUnit::DegreesC))
+        Datum::new_now(25.0, DatumUnit::DegreesC)
     }
 }
 
