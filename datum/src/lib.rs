@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 /// Note that it is not generically-typed (no `T` parameter). Data is communicated across HTTP / TCP
 /// and is consumed by a frontend HTML app, so we will lose type safety at those interfaces. Storing
 /// these data points in `Datum` structs anticipates this complication and tries to tackle it head-on.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Datum {
     pub value: DatumValue,
     pub unit: Option<DatumUnit>,
