@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use chrono::{DateTime, Utc};
 use rand::rngs::ThreadRng;
@@ -15,7 +15,7 @@ use device::Id;
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
 struct Environment<'a> {
-    attributes: Arc<Mutex<HashMap<Id, DatumGenerator<'a>>>>,
+    attributes: Mutex<HashMap<Id, DatumGenerator<'a>>>,
     #[allow(dead_code)] // remove ASAP
     created_at: DateTime<Utc>,
 }
@@ -48,7 +48,7 @@ impl<'a> DatumGenerator<'a> {
 impl<'a> Environment<'a> {
     fn new() -> Environment<'a> {
         Environment {
-            attributes: Arc::new(Mutex::new(HashMap::new())),
+            attributes: Mutex::new(HashMap::new()),
             created_at: Utc::now(),
         }
     }
@@ -260,9 +260,10 @@ impl<'a> Environment<'a> {
 
 #[cfg(test)]
 mod env_tests {
+    use std::thread::sleep;
+
     use chrono::{Duration, Utc};
     use regex::Regex;
-    use std::thread::sleep;
 
     use datum::DatumUnit;
 
