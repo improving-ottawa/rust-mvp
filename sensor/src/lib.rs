@@ -68,7 +68,7 @@ mod sensor_tests {
         fn get_datum(&self) -> Datum {
             // in our example, this should query the Environment
             // in this test, we just return a constant value
-            Datum::new_now(DatumValue::Float(42.0), Some(DatumUnit::DegreesC))
+            Datum::new_now(DatumValue::Float(42.0), DatumUnit::DegreesC)
         }
     }
 
@@ -78,6 +78,6 @@ mod sensor_tests {
         let datum = thermometer.get_datum();
 
         assert_eq!(datum.value, DatumValue::Float(42.0));
-        assert_eq!(datum.unit, Some(DatumUnit::DegreesC));
+        assert_eq!(datum.unit, DatumUnit::DegreesC)
     }
 }

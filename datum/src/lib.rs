@@ -12,7 +12,7 @@ use chrono::{DateTime, Utc};
 #[derive(PartialEq, Debug, Clone)]
 pub struct Datum {
     pub value: DatumValue,
-    pub unit: Option<DatumUnit>,
+    pub unit: DatumUnit,
     pub timestamp: DateTime<Utc>,
 }
 
@@ -22,7 +22,7 @@ impl Display for Datum {
             f,
             "{}@{}@{}",
             self.value,
-            self.unit.unwrap_or_default(),
+            self.unit,
             self.timestamp.to_rfc3339()
         )
     }
@@ -30,21 +30,21 @@ impl Display for Datum {
 
 #[allow(dead_code)] // remove ASAP
 impl Datum {
-    fn get_as_bool(&self) -> Option<bool> {
+    pub fn get_as_bool(&self) -> Option<bool> {
         match self.value {
             DatumValue::Bool(value) => Some(value),
             _ => None,
         }
     }
 
-    fn get_as_float(&self) -> Option<f32> {
+    pub fn get_as_float(&self) -> Option<f32> {
         match self.value {
             DatumValue::Float(value) => Some(value),
             _ => None,
         }
     }
 
-    fn get_as_int(&self) -> Option<i32> {
+    pub fn get_as_int(&self) -> Option<i32> {
         match self.value {
             DatumValue::Int(value) => Some(value),
             _ => None,
@@ -69,6 +69,27 @@ impl From<f32> for DatumValue {
 impl From<i32> for DatumValue {
     fn from(value: i32) -> Self {
         Self::Int(value)
+    }
+}
+
+#[derive(Debug)]
+pub enum DatumValueType {
+    Bool,
+    Float,
+    Int,
+}
+
+impl DatumValueType {
+    pub fn parse(string: &str) -> Result<DatumValueType, String> {
+        if string == "bool" {
+            Ok(DatumValueType::Bool)
+        } else if string == "float" {
+            Ok(DatumValueType::Float)
+        } else if string == "int" {
+            Ok(DatumValueType::Int)
+        } else {
+            Err(format!("cannot parse DatumValueType from: {}", string))
+        }
     }
 }
 
@@ -148,11 +169,7 @@ impl DatumUnit {
 }
 
 impl Datum {
-    pub fn new<T: Into<DatumValue>>(
-        value: T,
-        unit: Option<DatumUnit>,
-        timestamp: DateTime<Utc>,
-    ) -> Datum {
+    pub fn new<T: Into<DatumValue>>(value: T, unit: DatumUnit, timestamp: DateTime<Utc>) -> Datum {
         Datum {
             value: value.into(),
             unit,
@@ -160,7 +177,7 @@ impl Datum {
         }
     }
 
-    pub fn new_now<T: Into<DatumValue>>(value: T, unit: Option<DatumUnit>) -> Datum {
+    pub fn new_now<T: Into<DatumValue>>(value: T, unit: DatumUnit) -> Datum {
         Datum::new(value, unit, Utc::now())
     }
 
@@ -173,7 +190,7 @@ impl Datum {
                 match DatumValue::parse(value.to_string()) {
                     Ok(value) => match DatumUnit::parse(unit) {
                         Ok(unit) => match timestamp.parse::<DateTime<Utc>>() {
-                            Ok(timestamp) => Ok(Datum::new(value, Some(unit), timestamp)),
+                            Ok(timestamp) => Ok(Datum::new(value, unit, timestamp)),
                             Err(msg) => Err(msg.to_string()),
                         },
                         Err(msg) => Err(msg),
@@ -191,7 +208,7 @@ mod datum_tests {
     use super::*;
 
     fn create<T: Into<DatumValue>>(value: T) -> Datum {
-        Datum::new(value, None, Utc::now())
+        Datum::new(value, DatumUnit::Unitless, Utc::now())
     }
 
     #[test]
@@ -235,7 +252,7 @@ mod datum_tests {
         let now = Utc::now();
         let string = format!("12@@{}", now.to_rfc3339());
 
-        let expected = Datum::new(12, Some(DatumUnit::Unitless), now);
+        let expected = Datum::new(12, DatumUnit::Unitless, now);
         let actual = Datum::parse(string.as_str());
 
         assert_eq!(actual, Ok(expected))
@@ -246,7 +263,7 @@ mod datum_tests {
         let now = Utc::now();
         let string = format!("12.0@⏼@{}", now.to_rfc3339());
 
-        let expected = Datum::new(12.0, Some(DatumUnit::PoweredOn), now);
+        let expected = Datum::new(12.0, DatumUnit::PoweredOn, now);
         let actual = Datum::parse(string.as_str());
 
         assert_eq!(actual, Ok(expected))
@@ -257,7 +274,7 @@ mod datum_tests {
         let now = Utc::now();
         let string = format!("false@°C@{}", now.to_rfc3339());
 
-        let expected = Datum::new(false, Some(DatumUnit::DegreesC), now);
+        let expected = Datum::new(false, DatumUnit::DegreesC, now);
         let actual = Datum::parse(string.as_str());
 
         assert_eq!(actual, Ok(expected))
