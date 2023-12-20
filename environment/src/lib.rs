@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
+use rand::Rng;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
-use rand::Rng;
 
 use datum::{Datum, DatumUnit, DatumValue};
 use device::Id;
@@ -30,10 +30,14 @@ impl Environment {
     }
 
     fn get(&self, id: &Id) -> Datum {
-        let attributes = self.attributes.lock().unwrap();
+        let mut attributes = self.attributes.lock().unwrap();
         match attributes.get(id) {
             Some(datum) => datum.clone(),
-            None => self.generate_random_datum(),
+            None => {
+                let random_datum = self.generate_random_datum();
+                attributes.insert(id.clone(), random_datum.clone()); // Insert the random Datum into attributes
+                random_datum
+            }
         }
     }
 
@@ -53,7 +57,6 @@ impl Environment {
     }
 
     pub fn handle_request(&self, request: &str) -> String {
-        
         if request.starts_with("POST /set/") {
             // Not complete, but this is the general idea
             // Extract ID and command
@@ -107,10 +110,12 @@ impl Environment {
 
     fn execute_command(&self, id: &Id, command: &str) -> Option<Datum> {
         // TODO: Implement actual command execution logic
-        // This is a placeholder implementation
+        // Maybe the command should be an struct or enum with a type and a value?
+
         let mut attributes = self.attributes.lock().unwrap();
         if let Some(datum) = attributes.get_mut(id) {
             // Mutate the datum based on the command
+            // Then call set method
             // For now, just return the datum
             Some(datum.clone())
         } else {
