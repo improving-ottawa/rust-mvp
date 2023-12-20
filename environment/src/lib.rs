@@ -110,7 +110,7 @@ impl Environment {
         // Maybe the command should be an struct or enum with a type and a value?
 
         let mut attributes = self.attributes.lock().unwrap();
-        
+
         attributes.get_mut(id).map(|datum| datum.clone())
     }
 
@@ -129,7 +129,7 @@ impl Environment {
 #[cfg(test)]
 mod env_tests {
     use super::*;
-    use chrono::{Utc, DateTime};
+    use chrono::{DateTime, Utc};
     use datum::{DatumUnit, DatumValue};
     use regex::Regex;
 
