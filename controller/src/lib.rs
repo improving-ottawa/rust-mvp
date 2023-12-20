@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use datum::Datum;
 use device::{Device, Id, Name};
@@ -21,6 +23,8 @@ pub struct Controller {
     data: HashMap<Id, SensorHistory>,
     /// Maps `Device` `Id`s to their addresses
     addresses: HashMap<Id, Address>,
+    sensor_addresses: HashMap<Id, Address>,
+    actuator_addresses: HashMap<Id, Address>,
 }
 
 #[derive(Debug)]
@@ -55,7 +59,47 @@ impl Default for Controller {
             id: Id::new("controller"),
             data: HashMap::new(),
             addresses: HashMap::new(),
+            sensor_addresses: HashMap::new(),
+            actuator_addresses: HashMap::new(),
         }
+    }
+}
+
+pub trait ControllerExtension {
+    fn run(&self) -> std::io::Result<()>;
+}
+
+impl ControllerExtension for Arc<Mutex<Controller>> {
+    /// Starts the discovery process as well as polling sensors
+    fn run(&self) -> std::io::Result<()> {
+
+        let self_discovery_clone = Arc::clone(&self);
+        std::thread::spawn(move || loop {
+            {
+                let mut ctrl = self_discovery_clone.lock().unwrap();
+                ctrl.discover("_sensor").unwrap();
+                ctrl.discover("_actuator").unwrap();
+            }
+            std::thread::sleep(Duration::from_secs(30));
+        });
+
+        let self_api_clone = Arc::clone(&self);
+        std::thread::spawn(move || loop {
+            {
+                let ctrl = self_api_clone.lock().unwrap();
+                for (_, addr) in ctrl.sensor_addresses.iter().clone() {
+
+                    let trimmed_host = addr.host.trim_end_matches('.');
+                    let url = format!("{}:{}", trimmed_host, addr.port);
+
+                    ctrl.read_sensor(url.as_str()).unwrap();
+                }
+            }
+            std::thread::sleep(Duration::from_secs(5));
+        });
+
+
+        Ok(())
     }
 }
 
@@ -106,15 +150,20 @@ impl Controller {
             fullname, id_str
         );
 
-        let group = group.split('.').next().unwrap_or_default();
+        let group = group.split('.').next();
 
-        if group == "_sensor" || group == "_actuator" {
-            let info = Address::new(host, port);
-            self.addresses.insert(id.clone(), info);
-        } else {
-            panic!(
+        match group {
+            Some("_sensor") => {
+                let info = Address::new(host, port);
+                self.sensor_addresses.insert(id.clone(), info);
+            }
+            Some("_actuator") => {
+                let info = Address::new(host, port);
+                self.actuator_addresses.insert(id.clone(), info);
+            }
+            _ => panic!(
                 "[commit_to_memory] unknown group '{}' (expected '_sensor' or '_actuator')",
-                group
+                group.unwrap()
             )
         }
     }
@@ -157,7 +206,7 @@ impl Controller {
     }
 
     /// Attempts to get the latest `Datum` from the `Sensor` with the specified `Id`.
-    pub fn read_sensor(address: &str) -> Result<Datum, String> {
+    pub fn read_sensor(&self, address: &str) -> Result<Datum, String> {
         // send the minimum possible payload. We basically just want to ping the Sensor
         // see: https://stackoverflow.com/a/9734866
         let request = "GET / HTTP/1.1\r\n\r\n";

@@ -6,6 +6,7 @@ use uuid::Uuid;
 use actuator::Actuator;
 use actuator_temperature::TemperatureActuator;
 use controller::Controller;
+use controller::ControllerExtension;
 use device::{Device, Id, Name};
 use sensor::Sensor;
 use sensor_temperature::TemperatureSensor;
@@ -51,50 +52,10 @@ fn main() {
     // --------------------------------------------------------------------------------
 
     let controller = Arc::new(Mutex::new(Controller::new()));
+    controller.run().unwrap();
 
-    // Spawn a looping thread to continuously check for newly connected devices
-    let discovery_ctrl = controller.clone();
-    std::thread::spawn(move || loop {
-        {
-            discovery_ctrl.lock().unwrap().discover("_sensor").unwrap();
-            discovery_ctrl
-                .lock()
-                .unwrap()
-                .discover("_actuator")
-                .unwrap();
-        }
-        std::thread::sleep(Duration::from_secs(5));
-    });
-
-    // A testing loop where we lock the controller, call the api, release lock, sleep and loop
-    let api_ctrl = controller.clone();
     loop {
-        {
-            let controller = api_ctrl.lock().expect("failed to lock");
-
-            let address = controller.get_device_address(temperature_sensor_id.clone());
-
-            match address {
-                Ok(address) => {
-                    Controller::read_sensor(address.as_str()).unwrap();
-                }
-                Err(msg) => println!("{}", msg),
-            }
-        }
-        std::thread::sleep(Duration::from_secs(2));
-
-        {
-            let controller = api_ctrl.lock().expect("failed to lock");
-
-            let address = controller.get_device_address(temperature_actuator_id.clone());
-
-            match address {
-                Ok(address) => {
-                    Controller::command_actuator(address.as_str()).unwrap();
-                }
-                Err(msg) => println!("{}", msg),
-            }
-        }
-        std::thread::sleep(Duration::from_secs(2));
+        println!("Demo running...");
+        std::thread::sleep(Duration::from_secs(5));
     }
 }
