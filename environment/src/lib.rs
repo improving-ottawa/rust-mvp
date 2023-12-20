@@ -91,7 +91,9 @@ impl Environment {
 
     fn handle_client(&self, mut stream: TcpStream) -> std::io::Result<()> {
         let mut buffer = [0; 1024];
-        stream.read(&mut buffer)?;
+
+        stream.read_exact(&mut buffer)?;
+
         let request = std::str::from_utf8(&buffer).unwrap();
 
         let response = self.handle_request(request);
@@ -154,13 +156,13 @@ mod env_tests {
     #[test]
     fn test_handle_request() {
         let environment = Environment::new();
-        let id = Id::new("test_id");
+        let _id = Id::new("test_id");
         let date_str = "2023-01-01T00:00:00Z";
         let specific_datetime: DateTime<Utc> = DateTime::parse_from_rfc3339(date_str)
             .expect("Invalid date format")
             .with_timezone(&Utc);
 
-        let test_datum = Datum {
+        let _test_datum = Datum {
             value: DatumValue::Int(42),
             unit: Some(DatumUnit::Unitless),
             timestamp: specific_datetime,
