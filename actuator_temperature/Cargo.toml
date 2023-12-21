@@ -9,5 +9,3 @@ edition = "2021"
 datum = { path = "../datum" }
 device = { path = "../device" }
 actuator = { path = "../actuator" }
-serde = { version = "1.0.193", features = ["derive"] }
-serde_json = "1.0"
