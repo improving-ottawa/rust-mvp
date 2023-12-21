@@ -32,7 +32,7 @@ impl Actuator for TemperatureActuator {
                 TemperatureActuatorCommand::SetMaxTemperature(temp) => {
                     // TODO How do we handle this since it has no state?
                     //  Check to see if its a valid number and approve and
-                    //  call the Environment? 
+                    //  call the Environment?
                     println!("Handling SetMaxTemperature: {} for Id: {}", temp, sensor);
                 }
             },
