@@ -95,6 +95,8 @@ impl ControllerExtension for Arc<Mutex<Controller>> {
         // send a command off to the Actuator
         let self_api_clone = Arc::clone(self);
         std::thread::spawn(move || loop {
+            // Create a temp vec to hold the data history as there is a lock on the controller and
+            // we can't populate the history until the lock is released.
             let mut data_history: Vec<(Id, SensorHistory)> = Vec::new();
             {
                 let ctrl = self_api_clone.lock().unwrap();
@@ -124,6 +126,7 @@ impl ControllerExtension for Arc<Mutex<Controller>> {
                             let url = format!("{}:{}", trimmed_host, addr.port);
 
                             // TODO Based on some logic we determine if we need the temp to go up or down
+                            // Create an actuator command and attempt to deserialize it for http transfer.
                             let command = TemperatureActuatorCommand::SetMaxTemperature(100.0);
                             let command_json = serde_json::to_string(&command).unwrap();
 
@@ -280,7 +283,7 @@ struct SensorHistory {
 #[cfg(test)]
 mod controller_tests {
     // use super::*;
-
+    // TODO add back in once Controller api confirmed
     // #[test]
     // fn test_get_sensor_address() {
     //     let mut controller = Controller::new();

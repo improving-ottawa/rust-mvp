@@ -26,6 +26,7 @@ impl Device for TemperatureActuator {
 
 impl Actuator for TemperatureActuator {
     fn act(&self, sensor: Id, command: String) {
+        // Deserialize the string to the actuators type and then match on its commands
         match serde_json::from_str::<TemperatureActuatorCommand>(&command) {
             Ok(command_enum) => match command_enum {
                 TemperatureActuatorCommand::SetMaxTemperature(temp) => {
