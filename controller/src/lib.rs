@@ -209,25 +209,6 @@ impl Controller {
         }
     }
 
-    // /// Retrieves this `Device`'s address from its `Id`.
-    // pub fn get_device_address(&self, id: Id) -> Result<String, String> {
-    //     println!("[get_device_address] looking for Id: {}", id);
-    //
-    //     if !self.addresses.contains_key(&id) {
-    //         let msg = format!("Device Id '{}' not found in addresses", id);
-    //         println!("[get_device_address] {}", msg);
-    //         return Err(msg);
-    //     }
-    //
-    //     let device = self.addresses.get(&id).unwrap();
-    //
-    //     // sensor.host has a '.' at the end, i.e. "192.168.1.21."
-    //     // this removes any trailing '.' characters
-    //     let trimmed_host = device.host.trim_end_matches('.');
-    //
-    //     Ok(format!("{}:{}", trimmed_host, device.port))
-    // }
-
     /// Connects to an address, sends the specified request, and returns the response
     fn send_request(address: &str, request: &str) -> String {
         println!("[send_request] connecting to url: {}", address);
