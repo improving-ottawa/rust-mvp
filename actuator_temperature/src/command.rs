@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+#[derive(PartialEq, Debug)]
 pub enum Command {
     CoolTo(f32), // the Controller tells the Actuator to cool the Environment to 'x' degrees C
     HeatTo(f32), // the Controller tells the Actuator to heat the Environment to 'x' degrees C
@@ -21,11 +22,11 @@ impl Command {
         let mut pieces = string.split(':');
 
         match (pieces.next(), pieces.next()) {
-            (Some("CoolTo"), Some(temp)) => match temp.try_into() {
+            (Some("CoolTo"), Some(temp)) => match temp.parse() {
                 Ok(temp) => Ok(Command::CoolTo(temp)),
                 Err(_) => Err(format!("cannot parse {} as f32", temp)),
             },
-            (Some("HeatTo"), Some(temp)) => match temp.try_into() {
+            (Some("HeatTo"), Some(temp)) => match temp.parse() {
                 Ok(temp) => Ok(Command::HeatTo(temp)),
                 Err(_) => Err(format!("cannot parse {} as f32", temp)),
             },

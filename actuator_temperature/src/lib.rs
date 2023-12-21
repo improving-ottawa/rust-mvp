@@ -21,7 +21,7 @@ impl Device for TemperatureActuator {
 }
 
 impl Actuator for TemperatureActuator {
-    fn act(&self, id: Id, command: String) {
+    fn act(&self, _id: Id, command: String) {
         let command_is_valid = Command::parse(command.as_str()).is_ok();
 
         if command_is_valid {

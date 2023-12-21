@@ -1,11 +1,7 @@
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-
 use uuid::Uuid;
 
 use actuator::Actuator;
 use actuator_temperature::TemperatureActuator;
-use controller::Delegate;
 use controller::Controller;
 use device::{Device, Id, Name};
 use sensor::Sensor;
@@ -49,11 +45,5 @@ fn main() {
     // spin up the controller
     // --------------------------------------------------------------------------------
 
-    let controller = Controller::new();
-    controller.run().unwrap();
-
-    loop {
-        println!("Demo running...");
-        std::thread::sleep(Duration::from_secs(5));
-    }
+    Controller::new().run();
 }

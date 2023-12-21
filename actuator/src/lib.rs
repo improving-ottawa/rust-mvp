@@ -1,10 +1,10 @@
-use serde::ser::Serialize;
 use std::io::Read;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 
-use device::{Device, Id};
 use uuid::Uuid;
+
+use device::{Device, Id};
 
 /// An Actuator mutates the Environment.
 pub trait Actuator: Device {
@@ -70,4 +70,4 @@ pub trait Actuator: Device {
     }
 }
 
-pub trait Command: Serialize {}
+pub trait Command {}

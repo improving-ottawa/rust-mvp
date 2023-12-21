@@ -1,17 +1,9 @@
-mod state;
-
-use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::net::TcpStream;
-use std::str;
-use std::sync::{Arc, Mutex};
+use device::{Device, Id, Name};
 use std::time::Duration;
 
-use uuid::Uuid;
-
-use datum::Datum;
-use device::{Device, Id, Name};
 use crate::state::State;
+
+mod state;
 
 /// The Controller queries the `Sensor`s for `Datum`s and sends commands to the `Actuator`s.
 ///
@@ -24,7 +16,7 @@ use crate::state::State;
 pub struct Controller {
     name: Name,
     id: Id,
-    state: Arc<Mutex<State>>
+    state: State,
 }
 
 impl Device for Controller {
@@ -42,70 +34,59 @@ impl Default for Controller {
         Self {
             name: Name::new("controller"),
             id: Id::new("controller"),
-            state: Arc::new(Mutex::new(State::new()))
+            state: State::new(),
         }
     }
 }
 
 impl Controller {
+    pub fn new() -> Controller {
+        Controller::default()
+    }
+
     /// Starts the discovery process as well as polling sensors
-    fn run(&self) -> std::io::Result<()> {
-        let discover_sensors = Arc::clone(&self.state);
-        let discover_actuators = Arc::clone(&self.state);
+    pub fn run(&mut self) {
+        // spawn a thread to look for sensors on the network continually
+        self.state.discover_sensors();
 
-        // Continuously attempt to discover new devices on the network
-        std::thread::spawn(move || loop {
-            {
-                let mut ctrl = discover_sensors.lock().unwrap();
-                ctrl.discover("_sensor").unwrap();
-            }
+        // spawn a thread to look for actuators on the network continually
+        self.state.discover_actuators();
 
-            // FIXME why are we sleeping here? Let's remove this
-            std::thread::sleep(Duration::from_secs(30));
-        });
+        // // Cycle through and poll the Sensors, if the return Datum is outside a defined range
+        // // send a command off to the Actuator
+        // let self_api_clone = Arc::clone(&self.state);
+        //
+        // // FIXME I think this loop below needs to happen inside the State, like the discover() loop
+        // std::thread::spawn(move || loop {
+        //
+        //     // acquire a mutex lock on the state
+        //     let mut ctrl = self_api_clone.lock().unwrap();
+        //
+        //     // loop over all known sensors
+        //     for (id, )
+        //
+        //
+        //
+        //     // Create a temp vec to hold the data history as there is a lock on the controller and
+        //     // we can't populate the history until the lock is released.
+        //     let mut data_history: Vec<(Id, SensorHistory)> = Vec::new();
+        //     {
+        //         let ctrl = self_api_clone.lock().unwrap();
+        //
+        //     }
+        //
+        //     // Once we have exited the scope where we acquired the data and send commands
+        //     // its safe to acquire lock on ctrl again and update its data history
+        //     let mut ctrl = self_api_clone.lock().unwrap();
+        //     for (id, history) in data_history {
+        //         ctrl.data.insert(id, history);
+        //     }
+        //     std::thread::sleep(Duration::from_secs(5));
+        // });
+        //
+        // Ok(())
 
-        std::thread::spawn(move || loop {
-            {
-                let mut ctrl = discover_actuators.lock().unwrap();
-                ctrl.discover("_actuator").unwrap();
-            }
-
-            // FIXME why are we sleeping here? Let's remove this
-            std::thread::sleep(Duration::from_secs(30));
-        });
-
-        // Cycle through and poll the Sensors, if the return Datum is outside a defined range
-        // send a command off to the Actuator
-        let self_api_clone = Arc::clone(&self.state);
-
-        // FIXME I think this loop below needs to happen inside the State, like the discover() loop
-        std::thread::spawn(move || loop {
-
-            // acquire a mutex lock on the state
-            let mut ctrl = self_api_clone.lock().unwrap();
-
-            // loop over all known sensors
-            for (id, )
-
-
-
-            // Create a temp vec to hold the data history as there is a lock on the controller and
-            // we can't populate the history until the lock is released.
-            let mut data_history: Vec<(Id, SensorHistory)> = Vec::new();
-            {
-                let ctrl = self_api_clone.lock().unwrap();
-
-            }
-
-            // Once we have exited the scope where we acquired the data and send commands
-            // its safe to acquire lock on ctrl again and update its data history
-            let mut ctrl = self_api_clone.lock().unwrap();
-            for (id, history) in data_history {
-                ctrl.data.insert(id, history);
-            }
-            std::thread::sleep(Duration::from_secs(5));
-        });
-
-        Ok(())
+        // run() should loop continually
+        std::thread::sleep(Duration::MAX)
     }
 }
