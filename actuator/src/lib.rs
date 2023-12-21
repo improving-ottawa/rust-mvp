@@ -1,7 +1,8 @@
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 
-use device::Device;
+use device::{Device, Id};
+use uuid::Uuid;
 
 /// An Actuator mutates the Environment.
 pub trait Actuator: Device {
@@ -14,7 +15,7 @@ pub trait Actuator: Device {
     /// In the "real world", this would perform some actual, physical action.
     ///
     /// In our example MVP, this sends a command to the `Environment` which mutates its state.
-    fn act(sensor: device::Id, command: String);
+    fn act(&self, sensor: device::Id, command: String);
 
     /// Responds to all incoming requests by forwarding them to the `Environment`.
     fn respond(&self, listener: TcpListener) {
@@ -25,8 +26,17 @@ pub trait Actuator: Device {
             BufReader::new(&mut stream).read_line(&mut request).unwrap();
             println!("{} received request: {}", self.get_name(), request.trim());
 
+            // TODO grab Id from POST info
+            let temp_id = Id::new(&Uuid::new_v4().to_string());
+            self.act(temp_id, request.trim().to_string());
+
             let ack = "HTTP/1.1 200 OK\r\n\r\n";
             stream.write_all(ack.as_bytes()).unwrap();
         }
     }
 }
+
+pub trait Command {
+    fn to_string(&self) -> String;
+}
+
