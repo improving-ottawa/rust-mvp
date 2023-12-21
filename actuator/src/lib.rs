@@ -17,7 +17,7 @@ pub trait Actuator: Device {
     /// In the "real world", this would perform some actual, physical action.
     ///
     /// In our example MVP, this sends a command to the `Environment` which mutates its state.
-    fn act(&self, sensor: device::Id, command: String);
+    fn act(&self, device: Id, command: String);
 
     /// Responds to all incoming requests by forwarding them to the `Environment`.
     fn respond(&self, listener: TcpListener) {

@@ -24,17 +24,18 @@ impl Device for TemperatureActuator {
     }
 }
 
-#[allow(unused_variables)] // remove ASAP
 impl Actuator for TemperatureActuator {
     fn act(&self, sensor: Id, command: String) {
         match serde_json::from_str::<TemperatureActuatorCommand>(&command) {
             Ok(command_enum) => match command_enum {
                 TemperatureActuatorCommand::SetMaxTemperature(temp) => {
-                    println!("Handling SetMaxTemperature: {}", temp);
+                    // TODO How do we handle this since it has no state?
+                    // TODO Does this simply now call the Environment?
+                    println!("Handling SetMaxTemperature: {} for Id: {}", temp, sensor);
                 }
             },
             Err(e) => {
-                println!("Error serializing command to TemperatureActuatorCommand");
+                println!("Error deserializing command: {:?}", e);
             }
         }
     }
