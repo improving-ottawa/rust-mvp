@@ -1,121 +1,62 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
-use chrono::{DateTime, Utc};
-use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
 
-use datum::{Datum, DatumUnit, DatumValue, DatumValueType};
+use datum::{Datum, DatumUnit, DatumValueType};
 use device::Id;
+
+use crate::generator::DatumGenerator;
+
+mod generator;
 
 /// A test-only example environment which produces data detected by `Sensor`s.
 ///
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
-struct Environment<'a> {
-    attributes: Arc<Mutex<HashMap<Id, DatumGenerator<'a>>>>,
-    #[allow(dead_code)] // remove ASAP
-    created_at: DateTime<Utc>,
+struct Environment {
+    #[allow(dead_code)] // remove this ASAP
+    attributes: Mutex<HashMap<Id, DatumGenerator>>,
 }
 
-struct DatumGenerator<'a> {
-    generator: Box<dyn FnMut(DateTime<Utc>) -> DatumValue + 'a>,
-    unit: DatumUnit,
-}
-
-// DatumGenerator must implement Sync and Send in order to be wrapped in an Arc<Mutex<...>>, above
-unsafe impl Sync for DatumGenerator<'_> {}
-unsafe impl Send for DatumGenerator<'_> {}
-
-impl<'a> DatumGenerator<'a> {
-    fn new(
-        generator: Box<impl FnMut(DateTime<Utc>) -> DatumValue + 'a>,
-        unit: DatumUnit,
-    ) -> DatumGenerator<'a> {
-        DatumGenerator { generator, unit }
-    }
-
-    fn generate(&mut self) -> Datum {
-        let now = Utc::now();
-        let value = (*self.generator)(now);
-        Datum::new(value, self.unit, now)
-    }
-}
-
-#[allow(dead_code)] // remove ASAP
-impl<'a> Environment<'a> {
-    fn new() -> Environment<'a> {
+impl Environment {
+    #[allow(dead_code)] // remove this ASAP
+    fn new() -> Environment {
         Environment {
-            attributes: Arc::new(Mutex::new(HashMap::new())),
-            created_at: Utc::now(),
+            attributes: Mutex::new(HashMap::new()),
         }
     }
 
-    fn set(&self, id: Id, generator: DatumGenerator<'a>) {
-        // FIXME are we worried about deadlocks here?
+    #[allow(dead_code)] // remove this ASAP
+    fn set(&self, id: Id, generator: DatumGenerator) {
         let mut attributes = self.attributes.lock().unwrap();
         attributes.insert(id, generator);
     }
 
-    fn generator_linearly_increasing_f32(
-        &self,
-        slope: f32,
-        noise: f32,
-        unit: DatumUnit,
-    ) -> DatumGenerator<'a> {
-        let t0 = self.created_at.timestamp_millis();
-        let mut rng = thread_rng();
-
-        let f = move |time: DateTime<Utc>| -> DatumValue {
-            let delta = time.timestamp_millis() - t0;
-            let noise_factor = rng.gen_range(-1.0..1.0);
-            DatumValue::Float((delta as f32) * slope + noise * noise_factor)
-        };
-
-        DatumGenerator::new(Box::new(f), unit)
-    }
-
-    fn generator_linearly_decreasing_f32(
-        &self,
-        slope: f32,
-        noise: f32,
-        unit: DatumUnit,
-    ) -> DatumGenerator<'a> {
-        let t0 = self.created_at.timestamp_millis();
-        let mut rng = thread_rng();
-
-        let f = move |time: DateTime<Utc>| -> DatumValue {
-            let delta = time.timestamp_millis() - t0;
-            let noise_factor = rng.gen_range(-1.0..1.0);
-            DatumValue::Float((delta as f32) * slope + noise * noise_factor * -1.0)
-        };
-
-        DatumGenerator::new(Box::new(f), unit)
-    }
-
+    #[allow(dead_code)] // remove this ASAP
     fn get(&mut self, id: &Id, kind: DatumValueType, unit: DatumUnit) -> Datum {
-        // FIXME are we worried about deadlocks here?
         let mut attributes = self.attributes.lock().unwrap();
         match attributes.get_mut(id) {
             Some(generator) => generator.generate(),
             None => {
                 // we need to return the type (bool, f32, i32) of data the Sensor expects
-
                 let mut rng = thread_rng();
-
                 let generator = match kind {
-                    DatumValueType::Bool => todo!(),
-                    DatumValueType::Int => todo!(),
+                    DatumValueType::Bool => {
+                        let initial = false; // first value returned
+                        generator::bool_alternating(initial, unit)
+                    }
+                    DatumValueType::Int => {
+                        let slope = rng.gen_range(-10..10); // arbitrarily selected range of slopes
+                        let noise = rng.gen_range(0..2); // arbitrary selected range of noise values
+                        generator::time_dependent::i32_linear(slope, noise, unit)
+                    }
                     DatumValueType::Float => {
-                        let slope = rng.gen_range(0.01..0.10); // arbitrarily selected range of slopes
-                        let noise = rng.gen_range(0.01..0.10); // arbitrary selected range of noise values
-
-                        match rng.gen_range(0..1) {
-                            0 => self.generator_linearly_increasing_f32(slope, noise, unit),
-                            _ => self.generator_linearly_decreasing_f32(slope, noise, unit),
-                        }
+                        let slope = rng.gen_range(-0.10..0.10); // arbitrarily selected range of slopes
+                        let noise = rng.gen_range(0.0..0.10); // arbitrary selected range of noise values
+                        generator::time_dependent::f32_linear(slope, noise, unit)
                     }
                 };
 
@@ -128,26 +69,7 @@ impl<'a> Environment<'a> {
         }
     }
 
-    fn generate_random_datum(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        match rand::thread_rng().gen_range(0..3) {
-            0 => Environment::generate_random_bool(rng, unit),
-            1 => Environment::generate_random_f32(rng, unit),
-            _ => Environment::generate_random_i32(rng, unit),
-        }
-    }
-
-    fn generate_random_bool(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        Datum::new_now(DatumValue::Bool(rng.gen()), unit)
-    }
-
-    fn generate_random_f32(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        Datum::new_now(DatumValue::Float(rng.gen()), unit)
-    }
-
-    fn generate_random_i32(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        Datum::new_now(DatumValue::Int(rng.gen()), unit)
-    }
-
+    #[allow(dead_code)] // remove this ASAP
     pub fn handle_request(&mut self, request: &str) -> String {
         if request.starts_with("POST /set/") {
             // if the Environment gets a command from an actuator with a Device::Id that it is not
@@ -178,6 +100,7 @@ impl<'a> Environment<'a> {
         }
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn start_server(&mut self) -> std::io::Result<()> {
         let listener = TcpListener::bind("127.0.0.1:8080")?;
 
@@ -192,6 +115,7 @@ impl<'a> Environment<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn handle_client(&mut self, mut stream: TcpStream) -> std::io::Result<()> {
         let mut request = Vec::new();
         stream.read_to_end(&mut request).unwrap();
@@ -207,16 +131,19 @@ impl<'a> Environment<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn extract_command(&self, _request: &str) -> (Id, String) {
         todo!()
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn execute_command(&self, _id: &Id, _command: &str) -> Option<Datum> {
         // TODO: Implement actual command execution logic
         // Maybe the command should be an struct or enum with a type and a value?
         todo!()
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn parse_get_request(request: &str) -> Result<(Id, DatumValueType, DatumUnit), String> {
         // example request: "GET /get/test_id/float/°C"
         let mut parts = request.split('/');
@@ -243,10 +170,10 @@ impl<'a> Environment<'a> {
 
 #[cfg(test)]
 mod env_tests {
-    use chrono::Utc;
+    use chrono::{DateTime, Utc};
     use regex::Regex;
 
-    use datum::DatumUnit;
+    use datum::{DatumUnit, DatumValue};
 
     use super::*;
 
@@ -290,9 +217,70 @@ mod env_tests {
     #[test]
     fn test_handle_get_request_undefined() {
         let mut environment = Environment::new();
-
         let undefined_request = "GET /undefined";
         let undefined_response = environment.handle_request(undefined_request);
         assert_eq!(undefined_response, "HTTP/1.1 404 Not Found\r\n\r\n");
+    }
+
+    #[test]
+    fn test_get_with_existing_generator() {
+        let mut env = Environment::default();
+        let id = Id::new("test_id");
+        let unit = DatumUnit::DegreesC;
+
+        // Create a generator for this Id
+        let f = |_| -> DatumValue { DatumValue::Int(42) };
+        let generator = DatumGenerator::new(Box::new(f), unit);
+        env.attributes.lock().unwrap().insert(id.clone(), generator);
+
+        // Test get method with existing generator
+        let datum = env.get(&id, DatumValueType::Int, unit);
+        assert_eq!(datum.value, DatumValue::Int(42));
+        assert_eq!(datum.unit, unit);
+    }
+
+    #[test]
+    fn test_get_with_new_bool_generator() {
+        let mut env = Environment::default();
+        let id = Id::new("new_bool_id");
+        let unit = DatumUnit::Unitless;
+
+        // Test get method with new generator for bool type
+        let datum = env.get(&id, DatumValueType::Bool, unit);
+        match datum.value {
+            DatumValue::Bool(_) => (),
+            _ => panic!("Expected Bool, found {:?}", datum.value),
+        }
+        assert_eq!(datum.unit, unit);
+    }
+
+    #[test]
+    fn test_get_with_new_int_generator() {
+        let mut env = Environment::default();
+        let id = Id::new("new_int_id");
+        let unit = DatumUnit::PoweredOn;
+
+        // Test get method with new generator for Int type
+        let datum = env.get(&id, DatumValueType::Int, unit);
+        match datum.value {
+            DatumValue::Int(_) => (),
+            _ => panic!("Expected Int, found {:?}", datum.value),
+        }
+        assert_eq!(datum.unit, unit);
+    }
+
+    #[test]
+    fn test_get_with_new_float_generator() {
+        let mut env = Environment::default();
+        let id = Id::new("new_float_id");
+        let unit = DatumUnit::DegreesC;
+
+        // Test get method with new generator for float type
+        let datum = env.get(&id, DatumValueType::Float, unit);
+        match datum.value {
+            DatumValue::Float(_) => (),
+            _ => panic!("Expected Float, found {:?}", datum.value),
+        }
+        assert_eq!(datum.unit, unit);
     }
 }

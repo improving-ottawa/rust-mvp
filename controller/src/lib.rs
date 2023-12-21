@@ -13,11 +13,11 @@ use device::{Device, Id, Name};
 /// constructs an appropriate command to send to that `Sensor`'s `Actuator`.
 ///
 /// The `Controller`'s state can be queried by an HTML frontend, so historic data
-#[allow(dead_code)] // remove ASAP
 pub struct Controller {
     name: Name,
     id: Id,
     /// Holds data queried from `Sensor`s
+    #[allow(dead_code)] // remove this ASAP
     data: HashMap<Id, SensorHistory>,
     /// Maps `Device` `Id`s to their addresses
     addresses: HashMap<Id, Address>,
@@ -196,10 +196,12 @@ impl Controller {
 
 /// The `SensorHistory` holds the unique `id`, the user-friendly `name`, and some history of
 /// `data` points.
-#[allow(dead_code)] // remove ASAP
 struct SensorHistory {
+    #[allow(dead_code)] // remove this ASAP
     id: Id,
+    #[allow(dead_code)] // remove this ASAP
     name: Name,
+    #[allow(dead_code)] // remove this ASAP
     data: Vec<Datum>,
 }
 

@@ -28,7 +28,6 @@ impl Display for Datum {
     }
 }
 
-#[allow(dead_code)] // remove ASAP
 impl Datum {
     pub fn get_as_bool(&self) -> Option<bool> {
         match self.value {
