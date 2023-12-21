@@ -39,4 +39,3 @@ pub trait Actuator: Device {
 pub trait Command {
     fn to_string(&self) -> String;
 }
-

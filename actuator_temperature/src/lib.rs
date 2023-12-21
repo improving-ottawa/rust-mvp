@@ -1,6 +1,6 @@
 use actuator::{Actuator, Command};
 use device::{Device, Id, Name};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub struct TemperatureActuator {
     id: Id,
@@ -9,7 +9,7 @@ pub struct TemperatureActuator {
 
 #[derive(Serialize, Deserialize)]
 pub enum TemperatureActuatorCommand {
-    SetMaxTemperature(f32)
+    SetMaxTemperature(f32),
 }
 
 impl Command for TemperatureActuatorCommand {
@@ -17,7 +17,6 @@ impl Command for TemperatureActuatorCommand {
         serde_json::to_string(self).unwrap()
     }
 }
-
 
 impl Device for TemperatureActuator {
     fn get_name(&self) -> &Name {
@@ -32,16 +31,12 @@ impl Device for TemperatureActuator {
 #[allow(unused_variables)] // remove ASAP
 impl Actuator for TemperatureActuator {
     fn act(&self, sensor: Id, command: String) {
-
         match serde_json::from_str::<TemperatureActuatorCommand>(&command) {
-            Ok(command_enum) => {
-                match command_enum {
-                    TemperatureActuatorCommand::SetMaxTemperature(temp) => {
-                        println!("Handling SetMaxTemperature: {}", temp);
-                    }
+            Ok(command_enum) => match command_enum {
+                TemperatureActuatorCommand::SetMaxTemperature(temp) => {
+                    println!("Handling SetMaxTemperature: {}", temp);
                 }
-
-            }
+            },
             Err(e) => {
                 println!("Error serializing command to TemperatureActuatorCommand");
             }
