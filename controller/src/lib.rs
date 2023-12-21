@@ -94,7 +94,6 @@ impl ControllerExtension for Arc<Mutex<Controller>> {
         // send a command off to the Actuator
         let self_api_clone = Arc::clone(self);
         std::thread::spawn(move || loop {
-
             let mut data_history: Vec<(Id, SensorHistory)> = Vec::new();
             {
                 let ctrl = self_api_clone.lock().unwrap();
@@ -106,7 +105,7 @@ impl ControllerExtension for Arc<Mutex<Controller>> {
                         // TODO What information do we want this to contain?
                         let history_id = Id::new(&Uuid::new_v4().to_string());
                         let sensor_history = SensorHistory {
-                            id:  history_id.clone(),
+                            id: history_id.clone(),
                             name: Name::new("sensor_data"),
                             data: vec![datum.clone()],
                         };
