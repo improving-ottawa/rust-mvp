@@ -4,6 +4,7 @@ use std::net::TcpStream;
 use std::str;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use uuid::Uuid;
 
 use datum::Datum;
 use device::{Device, Id, Name};
@@ -21,8 +22,6 @@ pub struct Controller {
     /// Holds data queried from `Sensor`s
     #[allow(dead_code)] // remove this ASAP
     data: HashMap<Id, SensorHistory>,
-    /// Maps `Device` `Id`s to their addresses
-    addresses: HashMap<Id, Address>,
     sensor_addresses: HashMap<Id, Address>,
     actuator_addresses: HashMap<Id, Address>,
 }
@@ -58,7 +57,6 @@ impl Default for Controller {
             name: Name::new("controller"),
             id: Id::new("controller"),
             data: HashMap::new(),
-            addresses: HashMap::new(),
             sensor_addresses: HashMap::new(),
             actuator_addresses: HashMap::new(),
         }
@@ -72,26 +70,72 @@ pub trait ControllerExtension {
 impl ControllerExtension for Arc<Mutex<Controller>> {
     /// Starts the discovery process as well as polling sensors
     fn run(&self) -> std::io::Result<()> {
-        let self_discovery_clone = Arc::clone(self);
+        let sensor_discovery_clone = Arc::clone(self);
+        let actuator_discovery_clone = Arc::clone(self);
+
+        // Continuously attempt to discover new devices on the network
         std::thread::spawn(move || loop {
             {
-                let mut ctrl = self_discovery_clone.lock().unwrap();
+                let mut ctrl = sensor_discovery_clone.lock().unwrap();
                 ctrl.discover("_sensor").unwrap();
+            }
+            std::thread::sleep(Duration::from_secs(30));
+        });
+
+        std::thread::spawn(move || loop {
+            {
+                let mut ctrl = actuator_discovery_clone.lock().unwrap();
                 ctrl.discover("_actuator").unwrap();
             }
             std::thread::sleep(Duration::from_secs(30));
         });
 
+        // Cycle through and poll the Sensors, if the return Datum is outside a defined range
+        // send a command off to the Actuator
         let self_api_clone = Arc::clone(self);
         std::thread::spawn(move || loop {
+
+            let mut data_history: Vec<(Id, SensorHistory)> = Vec::new();
             {
                 let ctrl = self_api_clone.lock().unwrap();
-                for (_, addr) in ctrl.sensor_addresses.iter().clone() {
+                for (id, addr) in ctrl.sensor_addresses.iter().clone() {
                     let trimmed_host = addr.host.trim_end_matches('.');
                     let url = format!("{}:{}", trimmed_host, addr.port);
 
-                    ctrl.read_sensor(url.as_str()).unwrap();
+                    if let Ok(datum) = ctrl.read_sensor(url.as_str()) {
+                        // TODO What information do we want this to contain?
+                        let history_id = Id::new(&Uuid::new_v4().to_string());
+                        let sensor_history = SensorHistory {
+                            id:  history_id.clone(),
+                            name: Name::new("sensor_data"),
+                            data: vec![datum.clone()],
+                        };
+
+                        data_history.push((history_id, sensor_history));
+
+                        // TODO We need a way to compare Datums
+                        // TODO replace with actual min/max values for a given sensor
+                        let fake_data = 5.0;
+                        if fake_data < 10.0 {
+                            println!("Temperature is off - sending command to actuator");
+                            // Get actuator address since Id is same for actuator/sensor pairings
+                            // Make call
+                            // TODO this needs to be an actual command
+                            let addr = ctrl.actuator_addresses.get(id).unwrap();
+                            let trimmed_host = addr.host.trim_end_matches('.');
+                            let url = format!("{}:{}", trimmed_host, addr.port);
+
+                            ctrl.command_actuator(url.as_str()).unwrap()
+                        }
+                    }
                 }
+            }
+
+            // Once we have exited the scope where we acquired the data and send commands
+            // its safe to acquire lock on ctrl again and update its data history
+            let mut ctrl = self_api_clone.lock().unwrap();
+            for (id, history) in data_history {
+                ctrl.data.insert(id, history);
             }
             std::thread::sleep(Duration::from_secs(5));
         });
@@ -126,7 +170,7 @@ impl Controller {
 
                 self.commit_to_memory(fullname, group, host, port);
 
-                break; // FIXME why is this here? Doesn't this kill the discovery process?
+                break;
             }
         }
 
@@ -165,24 +209,24 @@ impl Controller {
         }
     }
 
-    /// Retrieves this `Device`'s address from its `Id`.
-    pub fn get_device_address(&self, id: Id) -> Result<String, String> {
-        println!("[get_device_address] looking for Id: {}", id);
-
-        if !self.addresses.contains_key(&id) {
-            let msg = format!("Device Id '{}' not found in addresses", id);
-            println!("[get_device_address] {}", msg);
-            return Err(msg);
-        }
-
-        let device = self.addresses.get(&id).unwrap();
-
-        // sensor.host has a '.' at the end, i.e. "192.168.1.21."
-        // this removes any trailing '.' characters
-        let trimmed_host = device.host.trim_end_matches('.');
-
-        Ok(format!("{}:{}", trimmed_host, device.port))
-    }
+    // /// Retrieves this `Device`'s address from its `Id`.
+    // pub fn get_device_address(&self, id: Id) -> Result<String, String> {
+    //     println!("[get_device_address] looking for Id: {}", id);
+    //
+    //     if !self.addresses.contains_key(&id) {
+    //         let msg = format!("Device Id '{}' not found in addresses", id);
+    //         println!("[get_device_address] {}", msg);
+    //         return Err(msg);
+    //     }
+    //
+    //     let device = self.addresses.get(&id).unwrap();
+    //
+    //     // sensor.host has a '.' at the end, i.e. "192.168.1.21."
+    //     // this removes any trailing '.' characters
+    //     let trimmed_host = device.host.trim_end_matches('.');
+    //
+    //     Ok(format!("{}:{}", trimmed_host, device.port))
+    // }
 
     /// Connects to an address, sends the specified request, and returns the response
     fn send_request(address: &str, request: &str) -> String {
@@ -219,7 +263,7 @@ impl Controller {
         Datum::parse(response.lines().last().unwrap_or_default())
     }
 
-    pub fn command_actuator(address: &str) -> std::io::Result<()> {
+    pub fn command_actuator(&self, address: &str) -> std::io::Result<()> {
         let content_type = "text/plain";
         let body = r#"Act"#;
         let content_length = body.len();
