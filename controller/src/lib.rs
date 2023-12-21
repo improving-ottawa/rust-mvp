@@ -253,6 +253,7 @@ impl Controller {
         let content_type = "application/json";
         let content_length = command_json.len();
 
+        // Place the serialized command inside the POST payload
         let request = format!(
             "POST HTTP/1.1\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
             content_type, content_length, command_json
