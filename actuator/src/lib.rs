@@ -1,7 +1,7 @@
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpListener;
 use serde::ser::Serialize;
 use std::io::Read;
+use std::io::{BufRead, BufReader, Write};
+use std::net::TcpListener;
 
 use device::{Device, Id};
 use uuid::Uuid;
@@ -21,48 +21,50 @@ pub trait Actuator: Device {
 
     /// Responds to all incoming requests by forwarding them to the `Environment`.
     fn respond(&self, listener: TcpListener) {
-        for stream in listener.incoming() {
-            if let Ok(mut stream) = stream {
-                let mut reader = BufReader::new(&mut stream);
-                let mut request = String::new();
-                let mut content_length: usize = 0;
+        for mut stream in listener.incoming().flatten() {
+            let mut reader = BufReader::new(&mut stream);
+            let mut request = String::new();
+            let mut content_length: usize = 0;
 
-                // Read the headers
-                loop {
-                    let mut line = String::new();
-                    let len = reader.read_line(&mut line).unwrap();
-                    if len == 0 || line == "\r\n" { break; }
-
-                    if line.starts_with("Content-Length:") {
-                        let parts: Vec<&str> = line.split_whitespace().collect();
-                        content_length = parts[1].parse().unwrap_or(0);
-                    }
-
-                    request.push_str(&line);
+            // Read the headers
+            loop {
+                let mut line = String::new();
+                let len = reader.read_line(&mut line).unwrap();
+                if len == 0 || line == "\r\n" {
+                    break;
                 }
 
-                // Read the body based on Content-Length
-                let mut body = String::new();
-                if content_length > 0 {
-                    let mut body_buffer = vec![0; content_length];
-                    reader.read_exact(&mut body_buffer).unwrap();
-                    body = String::from_utf8(body_buffer).unwrap_or_default();
+                if line.starts_with("Content-Length:") {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    content_length = parts[1].parse().unwrap_or(0);
                 }
 
-                println!("{} received request: {} with body: {}", self.get_name(), request.trim(), &body);
-
-                let temp_id = Id::new(&Uuid::new_v4().to_string());
-
-                self.act(temp_id, body.to_string());
-
-                let ack = "HTTP/1.1 200 OK\r\n\r\n";
-                stream.write_all(ack.as_bytes()).unwrap();
+                request.push_str(&line);
             }
+
+            // Read the body based on Content-Length
+            let mut body = String::new();
+            if content_length > 0 {
+                let mut body_buffer = vec![0; content_length];
+                reader.read_exact(&mut body_buffer).unwrap();
+                body = String::from_utf8(body_buffer).unwrap_or_default();
+            }
+
+            println!(
+                "{} received request: {} with body: {}",
+                self.get_name(),
+                request.trim(),
+                &body
+            );
+
+            let temp_id = Id::new(&Uuid::new_v4().to_string());
+
+            self.act(temp_id, body.to_string());
+
+            let ack = "HTTP/1.1 200 OK\r\n\r\n";
+            stream.write_all(ack.as_bytes()).unwrap();
         }
     }
 }
 
-pub trait Command : Serialize { }
-
-
-
+pub trait Command: Serialize {}

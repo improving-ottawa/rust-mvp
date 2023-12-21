@@ -12,7 +12,7 @@ pub enum TemperatureActuatorCommand {
     SetMaxTemperature(f32),
 }
 
-impl Command for TemperatureActuatorCommand { }
+impl Command for TemperatureActuatorCommand {}
 
 impl Device for TemperatureActuator {
     fn get_name(&self) -> &Name {

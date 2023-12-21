@@ -115,12 +115,10 @@ impl ControllerExtension for Arc<Mutex<Controller>> {
 
                         // TODO We need a way to compare Datums
                         // TODO replace with actual min/max values for a given sensor
+                        // TODO Remove fake_data, this is just so the next section gets called.
                         let fake_data = 5.0;
                         if fake_data < 10.0 {
-                            println!("Temperature is off - sending command to actuator");
                             // Get actuator address since Id is same for actuator/sensor pairings
-                            // Make call
-                            // TODO this needs to be an actual command
                             let addr = ctrl.actuator_addresses.get(id).unwrap();
                             let trimmed_host = addr.host.trim_end_matches('.');
                             let url = format!("{}:{}", trimmed_host, addr.port);
