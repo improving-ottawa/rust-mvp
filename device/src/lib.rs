@@ -61,7 +61,6 @@ impl Display for Name {
 }
 
 impl Name {
-    #[allow(dead_code)] // remove ASAP
     pub fn new(name: &str) -> Name {
         Name(String::from(name))
     }
@@ -77,7 +76,6 @@ impl Display for Id {
 }
 
 impl Id {
-    #[allow(dead_code)] // remove ASAP
     pub fn new(id: &str) -> Id {
         Id(String::from(id))
     }

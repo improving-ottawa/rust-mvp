@@ -15,15 +15,19 @@ use device::Id;
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
 struct Environment<'a> {
+    #[allow(dead_code)] // remove this ASAP
     attributes: Mutex<HashMap<Id, DatumGenerator<'a>>>,
 }
 
 struct DatumGenerator<'a> {
+    #[allow(dead_code)] // remove this ASAP
     generator: Mutex<Box<dyn FnMut(DateTime<Utc>) -> DatumValue + 'a>>,
+    #[allow(dead_code)] // remove this ASAP
     unit: DatumUnit,
 }
 
 impl<'a> DatumGenerator<'a> {
+    #[allow(dead_code)] // remove this ASAP
     fn new(
         generator: Box<dyn FnMut(DateTime<Utc>) -> DatumValue + 'a>,
         unit: DatumUnit,
@@ -34,6 +38,7 @@ impl<'a> DatumGenerator<'a> {
         }
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generate(&self) -> Datum {
         let now = Utc::now();
         let mut generator = self.generator.lock().unwrap();
@@ -42,19 +47,21 @@ impl<'a> DatumGenerator<'a> {
     }
 }
 
-#[allow(dead_code)] // remove ASAP
 impl<'a> Environment<'a> {
+    #[allow(dead_code)] // remove this ASAP
     fn new() -> Environment<'a> {
         Environment {
             attributes: Mutex::new(HashMap::new()),
         }
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn set(&self, id: Id, generator: DatumGenerator<'a>) {
         let mut attributes = self.attributes.lock().unwrap();
         attributes.insert(id, generator);
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generator_linearly_increasing_f32(
         &self,
         slope: f32,
@@ -73,6 +80,7 @@ impl<'a> Environment<'a> {
         DatumGenerator::new(Box::new(f), unit)
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generator_linearly_decreasing_f32(
         &self,
         slope: f32,
@@ -91,6 +99,7 @@ impl<'a> Environment<'a> {
         DatumGenerator::new(Box::new(f), unit)
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn get(&mut self, id: &Id, kind: DatumValueType, unit: DatumUnit) -> Datum {
         let mut attributes = self.attributes.lock().unwrap();
         match attributes.get_mut(id) {
@@ -142,6 +151,7 @@ impl<'a> Environment<'a> {
         }
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generate_random_datum(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
         match rand::thread_rng().gen_range(0..3) {
             0 => Environment::generate_random_bool(rng, unit),
@@ -150,18 +160,22 @@ impl<'a> Environment<'a> {
         }
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generate_random_bool(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
         Datum::new_now(DatumValue::Bool(rng.gen()), unit)
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generate_random_f32(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
         Datum::new_now(DatumValue::Float(rng.gen()), unit)
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn generate_random_i32(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
         Datum::new_now(DatumValue::Int(rng.gen()), unit)
     }
 
+    #[allow(dead_code)] // remove this ASAP
     pub fn handle_request(&mut self, request: &str) -> String {
         if request.starts_with("POST /set/") {
             // if the Environment gets a command from an actuator with a Device::Id that it is not
@@ -192,6 +206,7 @@ impl<'a> Environment<'a> {
         }
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn start_server(&mut self) -> std::io::Result<()> {
         let listener = TcpListener::bind("127.0.0.1:8080")?;
 
@@ -206,6 +221,7 @@ impl<'a> Environment<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn handle_client(&mut self, mut stream: TcpStream) -> std::io::Result<()> {
         let mut request = Vec::new();
         stream.read_to_end(&mut request).unwrap();
@@ -221,16 +237,19 @@ impl<'a> Environment<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn extract_command(&self, _request: &str) -> (Id, String) {
         todo!()
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn execute_command(&self, _id: &Id, _command: &str) -> Option<Datum> {
         // TODO: Implement actual command execution logic
         // Maybe the command should be an struct or enum with a type and a value?
         todo!()
     }
 
+    #[allow(dead_code)] // remove this ASAP
     fn parse_get_request(request: &str) -> Result<(Id, DatumValueType, DatumUnit), String> {
         // example request: "GET /get/test_id/float/°C"
         let mut parts = request.split('/');
