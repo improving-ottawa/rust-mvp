@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use uuid::Uuid;
 
+use actuator_temperature::TemperatureActuatorCommand;
 use datum::Datum;
 use device::{Device, Id, Name};
 
@@ -124,7 +125,11 @@ impl ControllerExtension for Arc<Mutex<Controller>> {
                             let trimmed_host = addr.host.trim_end_matches('.');
                             let url = format!("{}:{}", trimmed_host, addr.port);
 
-                            ctrl.command_actuator(url.as_str()).unwrap()
+                            // TODO Based on some logic we determine if we need the temp to go up or down
+                            let command = TemperatureActuatorCommand::SetMaxTemperature(100.0);
+                            let command_json = serde_json::to_string(&command).unwrap();
+
+                            ctrl.command_actuator(url.as_str(), command_json).unwrap()
                         }
                     }
                 }
@@ -243,14 +248,13 @@ impl Controller {
         Datum::parse(response.lines().last().unwrap_or_default())
     }
 
-    pub fn command_actuator(&self, address: &str) -> std::io::Result<()> {
-        let content_type = "text/plain";
-        let body = r#"Act"#;
-        let content_length = body.len();
+    pub fn command_actuator(&self, address: &str, command_json: String) -> std::io::Result<()> {
+        let content_type = "application/json";
+        let content_length = command_json.len();
 
         let request = format!(
             "POST HTTP/1.1\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
-            content_type, content_length, body
+            content_type, content_length, command_json
         );
 
         let response = Controller::send_request(address, request.as_str());

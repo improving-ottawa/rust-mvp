@@ -6,10 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actuator = { path = "../actuator" }
+actuator_temperature = { path = "../actuator_temperature" }
 datum = { path = "../datum" }
 device = { path = "../device" }
 sensor = { path = "../sensor" }
 sensor_temperature = { path = "../sensor_temperature" }
 
 mdns-sd = "0.10.1"
+serde_json = "1.0.108"
 uuid = {version = "1.6.1", features = ["v4", "serde"]}
