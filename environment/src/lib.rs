@@ -3,100 +3,36 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Mutex;
 
-use chrono::{DateTime, Utc};
-use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
 
-use datum::{Datum, DatumUnit, DatumValue, DatumValueType};
+use datum::{Datum, DatumUnit, DatumValueType};
 use device::Id;
+
+use crate::generator::DatumGenerator;
+
+mod generator;
 
 /// A test-only example environment which produces data detected by `Sensor`s.
 ///
 /// The `Environment` can be mutated by `Actuator`s.
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
-struct Environment<'a> {
+struct Environment {
     #[allow(dead_code)] // remove this ASAP
-    attributes: Mutex<HashMap<Id, DatumGenerator<'a>>>,
+    attributes: Mutex<HashMap<Id, DatumGenerator>>,
 }
 
-struct DatumGenerator<'a> {
+impl Environment {
     #[allow(dead_code)] // remove this ASAP
-    generator: Mutex<Box<dyn FnMut(DateTime<Utc>) -> DatumValue + 'a>>,
-    #[allow(dead_code)] // remove this ASAP
-    unit: DatumUnit,
-}
-
-impl<'a> DatumGenerator<'a> {
-    #[allow(dead_code)] // remove this ASAP
-    fn new(
-        generator: Box<dyn FnMut(DateTime<Utc>) -> DatumValue + 'a>,
-        unit: DatumUnit,
-    ) -> DatumGenerator<'a> {
-        DatumGenerator {
-            generator: Mutex::new(generator),
-            unit,
-        }
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generate(&self) -> Datum {
-        let now = Utc::now();
-        let mut generator = self.generator.lock().unwrap();
-        let value = (*generator)(now);
-        Datum::new(value, self.unit, now)
-    }
-}
-
-impl<'a> Environment<'a> {
-    #[allow(dead_code)] // remove this ASAP
-    fn new() -> Environment<'a> {
+    fn new() -> Environment {
         Environment {
             attributes: Mutex::new(HashMap::new()),
         }
     }
 
     #[allow(dead_code)] // remove this ASAP
-    fn set(&self, id: Id, generator: DatumGenerator<'a>) {
+    fn set(&self, id: Id, generator: DatumGenerator) {
         let mut attributes = self.attributes.lock().unwrap();
         attributes.insert(id, generator);
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generator_linearly_increasing_f32(
-        &self,
-        slope: f32,
-        noise: f32,
-        unit: DatumUnit,
-    ) -> DatumGenerator<'a> {
-        let starting_time = Utc::now().timestamp_millis(); // Fixed starting time
-        let mut rng = thread_rng();
-
-        let f = move |now: DateTime<Utc>| -> DatumValue {
-            let delta = now.timestamp_millis() - starting_time;
-            let noise_factor = rng.gen_range(-1.0..1.0) * noise;
-            DatumValue::Float(delta as f32 * slope + noise_factor)
-        };
-
-        DatumGenerator::new(Box::new(f), unit)
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generator_linearly_decreasing_f32(
-        &self,
-        slope: f32,
-        noise: f32,
-        unit: DatumUnit,
-    ) -> DatumGenerator<'a> {
-        let starting_time = Utc::now().timestamp_millis(); // Fix the starting time
-        let mut rng = thread_rng();
-
-        let f = move |now: DateTime<Utc>| -> DatumValue {
-            let delta = now.timestamp_millis() - starting_time;
-            let noise_factor = rng.gen_range(-1.0..1.0);
-            DatumValue::Float(-1.0 * (delta as f32) * slope + noise * noise_factor)
-        };
-
-        DatumGenerator::new(Box::new(f), unit)
     }
 
     #[allow(dead_code)] // remove this ASAP
@@ -108,36 +44,22 @@ impl<'a> Environment<'a> {
                 // we need to return the type (bool, f32, i32) of data the Sensor expects
                 let mut rng = thread_rng();
                 let generator = match kind {
-                    DatumValueType::Bool => {
-                        let mut last_value = false;
-                        let f = move |_| -> DatumValue {
-                            last_value = !last_value;
-                            DatumValue::Bool(last_value)
-                        };
-                        DatumGenerator::new(Box::new(f), unit)
-                    }
+                    DatumValueType::Bool => generator::bool_alternating(unit),
                     DatumValueType::Int => {
                         let slope = rng.gen_range(1..10);
-                        let t0 = Utc::now().timestamp();
-                        let f = move |now: DateTime<Utc>| -> DatumValue {
-                            let delta = (now.timestamp() - t0) / 1000;
-                            let increase = rng.gen_bool(0.5);
-                            if increase {
-                                DatumValue::Int((delta * slope) as i32)
-                            } else {
-                                DatumValue::Int((-delta * slope) as i32)
-                            }
-                        };
-                        DatumGenerator::new(Box::new(f), unit)
+                        generator::time_dependent::i32_random_walk(slope, unit)
                     }
-
                     DatumValueType::Float => {
                         let slope = rng.gen_range(0.01..0.10); // arbitrarily selected range of slopes
                         let noise = rng.gen_range(0.01..0.10); // arbitrary selected range of noise values
 
                         match rng.gen_range(0..1) {
-                            0 => self.generator_linearly_increasing_f32(slope, noise, unit),
-                            _ => self.generator_linearly_decreasing_f32(slope, noise, unit),
+                            0 => {
+                                generator::time_dependent::f32_linear_increasing(slope, noise, unit)
+                            }
+                            _ => {
+                                generator::time_dependent::f32_linear_decreasing(slope, noise, unit)
+                            }
                         }
                     }
                 };
@@ -149,30 +71,6 @@ impl<'a> Environment<'a> {
                 attributes.get_mut(id).unwrap().generate()
             }
         }
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generate_random_datum(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        match rand::thread_rng().gen_range(0..3) {
-            0 => Environment::generate_random_bool(rng, unit),
-            1 => Environment::generate_random_f32(rng, unit),
-            _ => Environment::generate_random_i32(rng, unit),
-        }
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generate_random_bool(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        Datum::new_now(DatumValue::Bool(rng.gen()), unit)
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generate_random_f32(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        Datum::new_now(DatumValue::Float(rng.gen()), unit)
-    }
-
-    #[allow(dead_code)] // remove this ASAP
-    fn generate_random_i32(rng: &mut ThreadRng, unit: DatumUnit) -> Datum {
-        Datum::new_now(DatumValue::Int(rng.gen()), unit)
     }
 
     #[allow(dead_code)] // remove this ASAP
@@ -276,12 +174,10 @@ impl<'a> Environment<'a> {
 
 #[cfg(test)]
 mod env_tests {
-    use std::thread::sleep;
-
-    use chrono::{Duration, Utc};
+    use chrono::{DateTime, Utc};
     use regex::Regex;
 
-    use datum::DatumUnit;
+    use datum::{DatumUnit, DatumValue};
 
     use super::*;
 
@@ -328,119 +224,6 @@ mod env_tests {
         let undefined_request = "GET /undefined";
         let undefined_response = environment.handle_request(undefined_request);
         assert_eq!(undefined_response, "HTTP/1.1 404 Not Found\r\n\r\n");
-    }
-
-    #[test]
-    fn test_datum_generator_new_and_generate() {
-        // Create a generator closure
-        let mut counter = 0;
-        let generator = move |_: DateTime<Utc>| -> DatumValue {
-            counter += 1;
-            DatumValue::Int(counter)
-        };
-
-        let datum_generator = DatumGenerator::new(Box::new(generator), DatumUnit::Unitless);
-
-        // Generate a datum and verify its contents
-        let datum1 = datum_generator.generate();
-        assert_eq!(datum1.value, DatumValue::Int(1));
-        assert_eq!(datum1.unit, DatumUnit::Unitless);
-
-        // Generate another datum and verify the counter incremented
-        let datum2 = datum_generator.generate();
-        assert_eq!(datum2.value, DatumValue::Int(2));
-        assert_eq!(datum2.unit, DatumUnit::Unitless);
-    }
-
-    #[test]
-    fn test_datum_generator() {
-        // Create a DatumGenerator with a mutable closure
-        let generator = Box::new(move |now: DateTime<Utc>| -> DatumValue {
-            DatumValue::Int(now.timestamp() as i32)
-        });
-        let datum_generator = DatumGenerator::new(generator, DatumUnit::Unitless);
-
-        // Generate a Datum and test its properties
-        let datum = datum_generator.generate();
-        match datum.value {
-            DatumValue::Int(value) => assert!(value >= 0), // assuming current timestamp is positive
-            _ => panic!("Unexpected DatumValue type"),
-        }
-        assert_eq!(datum.unit, DatumUnit::Unitless);
-    }
-
-    #[test]
-    fn test_generator_linearly_increasing_f32() {
-        let env = Environment::default();
-        let slope = 2.0_f32; // Increased slope
-        let noise = 0.01_f32; // Reduced noise
-        let unit = DatumUnit::DegreesC;
-
-        let generator = env.generator_linearly_increasing_f32(slope, noise, unit);
-
-        // Generate a datum, then wait and generate another
-        let datum1 = generator.generate();
-
-        // Increase the delay
-        sleep(Duration::seconds(1).to_std().unwrap());
-        let datum2 = generator.generate();
-
-        // Check the unit
-        assert_eq!(datum1.unit, unit);
-        assert_eq!(datum2.unit, unit);
-
-        // Check the value type and linear increase
-        if let DatumValue::Float(value1) = datum1.value {
-            if let DatumValue::Float(value2) = datum2.value {
-                assert!(
-                    value2 > value1,
-                    "Value did not increase: value2 = {}, value1 = {}",
-                    value2,
-                    value1
-                );
-            } else {
-                panic!("Datum2 value is not a float");
-            }
-        } else {
-            panic!("Datum1 value is not a float");
-        }
-    }
-
-    #[test]
-    fn test_generator_linearly_decreasing_f32() {
-        let env = Environment::default();
-        let slope = 2.0_f32; // Slope for the linear decrease
-        let noise = 0.01_f32; // Noise factor
-        let unit = DatumUnit::DegreesC; // Unit for the Datum
-
-        let generator = env.generator_linearly_decreasing_f32(slope, noise, unit);
-
-        // Generate a datum, then wait and generate another
-        let datum1 = generator.generate();
-
-        // Introduce a delay
-        sleep(Duration::seconds(1).to_std().unwrap());
-        let datum2 = generator.generate();
-
-        // Verify the unit
-        assert_eq!(datum1.unit, unit);
-        assert_eq!(datum2.unit, unit);
-
-        // Verify the type and decreasing values
-        if let DatumValue::Float(value1) = datum1.value {
-            if let DatumValue::Float(value2) = datum2.value {
-                assert!(
-                    value2 < value1,
-                    "Value did not decrease: value2 = {}, value1 = {}",
-                    value2,
-                    value1
-                );
-            } else {
-                panic!("Datum2 value is not a float");
-            }
-        } else {
-            panic!("Datum1 value is not a float");
-        }
     }
 
     #[test]
