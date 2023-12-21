@@ -44,23 +44,19 @@ impl Environment {
                 // we need to return the type (bool, f32, i32) of data the Sensor expects
                 let mut rng = thread_rng();
                 let generator = match kind {
-                    DatumValueType::Bool => generator::bool_alternating(unit),
+                    DatumValueType::Bool => {
+                        let initial = false; // first value returned
+                        generator::bool_alternating(initial, unit)
+                    }
                     DatumValueType::Int => {
-                        let slope = rng.gen_range(1..10);
-                        generator::time_dependent::i32_random_walk(slope, unit)
+                        let slope = rng.gen_range(-10..10); // arbitrarily selected range of slopes
+                        let noise = rng.gen_range(0..2); // arbitrary selected range of noise values
+                        generator::time_dependent::i32_linear(slope, noise, unit)
                     }
                     DatumValueType::Float => {
-                        let slope = rng.gen_range(0.01..0.10); // arbitrarily selected range of slopes
-                        let noise = rng.gen_range(0.01..0.10); // arbitrary selected range of noise values
-
-                        match rng.gen_range(0..1) {
-                            0 => {
-                                generator::time_dependent::f32_linear_increasing(slope, noise, unit)
-                            }
-                            _ => {
-                                generator::time_dependent::f32_linear_decreasing(slope, noise, unit)
-                            }
-                        }
+                        let slope = rng.gen_range(-0.10..0.10); // arbitrarily selected range of slopes
+                        let noise = rng.gen_range(0.0..0.10); // arbitrary selected range of noise values
+                        generator::time_dependent::f32_linear(slope, noise, unit)
                     }
                 };
 
