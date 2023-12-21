@@ -16,8 +16,6 @@ use device::Id;
 #[derive(Default)] // gives us an "empty" Environment with Environment::default()
 struct Environment<'a> {
     attributes: Mutex<HashMap<Id, DatumGenerator<'a>>>,
-    #[allow(dead_code)] // remove ASAP
-    created_at: DateTime<Utc>,
 }
 
 struct DatumGenerator<'a> {
@@ -49,7 +47,6 @@ impl<'a> Environment<'a> {
     fn new() -> Environment<'a> {
         Environment {
             attributes: Mutex::new(HashMap::new()),
-            created_at: Utc::now(),
         }
     }
 
