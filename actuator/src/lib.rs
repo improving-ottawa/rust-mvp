@@ -60,6 +60,8 @@ pub trait Actuator: Device {
             // TODO Does Id matter since the appropriate Actuator is handling it anyways?
             let temp_id = Id::new(&Uuid::new_v4().to_string());
 
+            // TODO Should we add a return type to `act` and then our HTTP response
+            //  depends on the success of the act call? Or just always send back 200?
             self.act(temp_id, body.to_string());
 
             let ack = "HTTP/1.1 200 OK\r\n\r\n";

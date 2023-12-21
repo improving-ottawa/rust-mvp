@@ -31,7 +31,8 @@ impl Actuator for TemperatureActuator {
             Ok(command_enum) => match command_enum {
                 TemperatureActuatorCommand::SetMaxTemperature(temp) => {
                     // TODO How do we handle this since it has no state?
-                    // TODO Does this simply now call the Environment?
+                    //  Check to see if its a valid number and approve and
+                    //  call the Environment? 
                     println!("Handling SetMaxTemperature: {} for Id: {}", temp, sensor);
                 }
             },
