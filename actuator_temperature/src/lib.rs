@@ -12,11 +12,7 @@ pub enum TemperatureActuatorCommand {
     SetMaxTemperature(f32),
 }
 
-impl Command for TemperatureActuatorCommand {
-    fn to_string(&self) -> String {
-        serde_json::to_string(self).unwrap()
-    }
-}
+impl Command for TemperatureActuatorCommand { }
 
 impl Device for TemperatureActuator {
     fn get_name(&self) -> &Name {
