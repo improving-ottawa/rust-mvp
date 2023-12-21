@@ -52,6 +52,15 @@ impl Controller {
         // spawn a thread to look for actuators on the network continually
         self.state.discover_actuators();
 
+        // TODO I think we need two more loops
+        //      Loop 1 should be another state-internal loop, polling all known sensors for data and saving it in the histories
+        //      Loop 2 should be in this scope right here, and it should be the "control loop".
+        //
+        //      The "control loop" should
+        //        1. get the latest Datums for each sensor
+        //        2. determine if each sensor is outside of some user-defined range
+        //        3. if so, command the sensor's corresponding actuator to perform some command
+
         // // Cycle through and poll the Sensors, if the return Datum is outside a defined range
         // // send a command off to the Actuator
         // let self_api_clone = Arc::clone(&self.state);
