@@ -14,5 +14,4 @@ sensor = { path = "../sensor" }
 sensor_temperature = { path = "../sensor_temperature" }
 
 mdns-sd = "0.10.1"
-serde_json = "1.0.108"
 uuid = {version = "1.6.1", features = ["v4", "serde"]}

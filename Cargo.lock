@@ -118,7 +118,6 @@ dependencies = [
  "mdns-sd",
  "sensor",
  "sensor_temperature",
- "serde_json",
  "uuid",
 ]
 
