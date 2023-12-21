@@ -20,11 +20,14 @@ fn main() {
     // --------------------------------------------------------------------------------
 
     let port = 8787;
-    let temperature_sensor_id = Id::new(&Uuid::new_v4().to_string());
-    let full_id = format!("temperature_{}", temperature_sensor_id);
+
+    // The ID couples a sensor with an actuator.
+    let temperature_id = Id::new(&Uuid::new_v4().to_string());
+
+    let full_id = format!("temperature_{}", temperature_id);
     let name = Name::new(&full_id);
 
-    let sensor = TemperatureSensor::new(temperature_sensor_id.clone(), name);
+    let sensor = TemperatureSensor::new(temperature_id.clone(), name);
     let listener = sensor.bind(ip, port, "_sensor");
 
     std::thread::spawn(move || {
@@ -36,11 +39,10 @@ fn main() {
     // --------------------------------------------------------------------------------
 
     let port = 9898;
-    let temperature_actuator_id = Id::new(&Uuid::new_v4().to_string());
-    let full_id = format!("temperature_{}", temperature_actuator_id);
+    let full_id = format!("temperature_{}", temperature_id);
     let name = Name::new(&full_id);
 
-    let actuator = TemperatureActuator::new(temperature_actuator_id.clone(), name);
+    let actuator = TemperatureActuator::new(temperature_id.clone(), name);
     let listener = actuator.bind(ip, port, "_actuator");
 
     std::thread::spawn(move || {
