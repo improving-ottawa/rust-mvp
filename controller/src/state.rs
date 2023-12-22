@@ -4,6 +4,8 @@ use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
+use mdns_sd::ServiceInfo;
+
 use datum::Datum;
 use device::Id;
 
@@ -28,73 +30,52 @@ impl State {
         Self::default()
     }
 
+    fn extract_id(info: ServiceInfo) -> Id {
+        let id = info.get_property("id").unwrap().to_string();
+
+        println!(
+            "[extract_id] found device at {}:{} with {}",
+            info.get_hostname().trim_end_matches('.'),
+            info.get_port(),
+            id
+        );
+
+        Id::new(id.as_str())
+    }
+
     pub fn discover_sensors(&self) -> JoinHandle<()> {
-        // clone the Arc<Mutex<>> around the sensors so we can update them in multiple threads
-        let sensors = Arc::clone(&self.sensors);
-
-        std::thread::spawn(move || {
-            let mdns = mdns_sd::ServiceDaemon::new().unwrap();
-            let service_type = "_sensor._tcp.local.";
-            let receiver = mdns.browse(service_type).unwrap();
-
-            while let Ok(event) = receiver.recv() {
-                if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
-                    let fullname = info.get_fullname();
-                    let host = info.get_hostname();
-                    let port = info.get_port();
-
-                    println!(
-                        "[discover] controller found: {} at {:?}:{}",
-                        fullname, host, port
-                    );
-
-                    // e.g. hello_world.how_are.you => hello_world
-                    let full_id = fullname.split('.').next().unwrap_or_default();
-
-                    // hello_world => world
-                    let id_str = full_id.split('_').nth(1).unwrap_or_default();
-                    let id = Id::new(id_str);
-
-                    // whenever we find something new on the network, remember it
-                    let sensors = sensors.lock();
-                    let info = Address::new(host, port);
-                    sensors.unwrap().insert(id, info);
-                }
-            }
-        })
+        self.discover("_sensor")
     }
 
     pub fn discover_actuators(&self) -> JoinHandle<()> {
-        // clone the Arc<Mutex<>> around the actuators so we can update them in multiple threads
-        let actuators = Arc::clone(&self.actuators);
+        self.discover("_actuator")
+    }
+
+    fn discover(&self, group: &str) -> JoinHandle<()> {
+        let devices = match group {
+            "_sensor" => &self.sensors,
+            "_actuator" => &self.actuators,
+            _ => panic!("can only discover _sensor or _actuator, not {}", group),
+        };
+
+        let group = String::from(group);
+
+        // clone the Arc<Mutex<>> around the devices so we can update them in multiple threads
+        let devices = Arc::clone(devices);
 
         std::thread::spawn(move || {
             let mdns = mdns_sd::ServiceDaemon::new().unwrap();
-            let service_type = "_actuator._tcp.local.";
-            let receiver = mdns.browse(service_type).unwrap();
+            let service_type = format!("{}._tcp.local.", group);
+            let receiver = mdns.browse(service_type.as_str()).unwrap();
 
             while let Ok(event) = receiver.recv() {
                 if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
-                    let fullname = info.get_fullname();
-                    let host = info.get_hostname();
-                    let port = info.get_port();
-
-                    println!(
-                        "[discover] controller found: {} at {:?}:{}",
-                        fullname, host, port
-                    );
-
-                    // e.g. hello_world.how_are.you => hello_world
-                    let full_id = fullname.split('.').next().unwrap_or_default();
-
-                    // hello_world => world
-                    let id_str = full_id.split('_').nth(1).unwrap_or_default();
-                    let id = Id::new(id_str);
+                    let address = Address::new(info.get_hostname(), info.get_port());
+                    let id = State::extract_id(info);
 
                     // whenever we find something new on the network, remember it
-                    let actuators = actuators.lock();
-                    let info = Address::new(host, port);
-                    actuators.unwrap().insert(id, info);
+                    let devices = devices.lock();
+                    devices.unwrap().insert(id, address);
                 }
             }
         })

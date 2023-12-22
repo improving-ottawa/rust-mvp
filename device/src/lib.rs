@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::net::{IpAddr, TcpListener};
 
@@ -20,13 +21,16 @@ pub trait Device {
 
         println!("Registering new device via mDNS at {}.{}", name, domain);
 
+        let mut properties = HashMap::new();
+        properties.insert(String::from("id"), self.get_id().to_string());
+
         let my_service = ServiceInfo::new(
             domain.as_str(),
             name.0.as_str(),
             host.as_str(),
             ip,
             port,
-            None,
+            properties,
         )
         .unwrap();
 
