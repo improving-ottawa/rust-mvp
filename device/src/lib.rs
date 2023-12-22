@@ -51,7 +51,7 @@ pub trait Device {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Name(pub String);
 
 impl Display for Name {

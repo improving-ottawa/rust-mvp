@@ -7,6 +7,7 @@ name = "actuator"
 version = "0.1.0"
 dependencies = [
  "device",
+ "uuid",
 ]
 
 [[package]]
@@ -108,6 +109,8 @@ dependencies = [
 name = "controller"
 version = "0.1.0"
 dependencies = [
+ "actuator",
+ "actuator_temperature",
  "datum",
  "device",
  "mdns-sd",
@@ -567,7 +570,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e395fcf16a7a3d8127ec99782007af141946b4795001f876d54fb0d55978560"
 dependencies = [
  "getrandom",
- "serde",
 ]
 
 [[package]]

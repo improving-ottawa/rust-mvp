@@ -1,6 +1,10 @@
 use actuator::Actuator;
 use device::{Device, Id, Name};
 
+use crate::command::Command;
+
+mod command;
+
 pub struct TemperatureActuator {
     id: Id,
     name: Name,
@@ -16,10 +20,13 @@ impl Device for TemperatureActuator {
     }
 }
 
-#[allow(unused_variables)] // remove ASAP
 impl Actuator for TemperatureActuator {
-    fn act(sensor: Id, command: String) {
-        todo!()
+    fn act(&self, _id: Id, command: String) {
+        let command_is_valid = Command::parse(command.as_str()).is_ok();
+
+        if command_is_valid {
+            todo!() // send to Environment
+        }
     }
 }
 
