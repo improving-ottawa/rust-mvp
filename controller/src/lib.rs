@@ -1,5 +1,6 @@
-use device::{Device, Id, Name};
 use std::time::Duration;
+
+use device::{Device, Id, Name};
 
 use crate::state::State;
 
@@ -51,6 +52,9 @@ impl Controller {
 
         // spawn a thread to look for actuators on the network continually
         self.state.discover_actuators();
+
+        // poll sensors for data in perpetuity, waiting 1s in between polls
+        self.state.poll();
 
         // TODO I think we need two more loops
         //      Loop 1 should be another state-internal loop, polling all known sensors for data and saving it in the histories

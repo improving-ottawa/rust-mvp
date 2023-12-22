@@ -3,6 +3,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
+use std::time::Duration;
 
 use mdns_sd::ServiceInfo;
 
@@ -62,7 +63,7 @@ impl State {
         let group = String::from(group);
 
         // clone the Arc<Mutex<>> around the devices so we can update them in multiple threads
-        let devices = Arc::clone(devices);
+        let mutex = Arc::clone(devices);
 
         std::thread::spawn(move || {
             let mdns = mdns_sd::ServiceDaemon::new().unwrap();
@@ -72,8 +73,9 @@ impl State {
             while let Ok(event) = receiver.recv() {
                 if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
                     let id = State::extract_id(&info);
-                    let devices = devices.lock();
-                    devices.unwrap().insert(id, info);
+                    let lock_result = mutex.lock();
+                    let mut mutex_guard = lock_result.unwrap();
+                    mutex_guard.insert(id, info);
                 }
             }
         })
@@ -81,8 +83,14 @@ impl State {
 
     /// Connects to an address, sends the specified request, and returns the response
     #[allow(dead_code)] // remove this ASAP
-    fn send_request(address: &str, request: &str) -> String {
-        println!("[send_request] connecting to url: {}", address);
+    fn send_request(info: &ServiceInfo, request: &str) -> String {
+        let address = format!(
+            "{}:{}",
+            info.get_hostname().trim_end_matches('.'),
+            info.get_port()
+        );
+
+        println!("[send_request] connecting to url {}", address);
 
         let mut stream = TcpStream::connect(address).unwrap();
 
@@ -100,16 +108,18 @@ impl State {
 
     /// Attempts to get the latest `Datum` from the `Sensor` with the specified `Id`.
     #[allow(dead_code)] // remove this ASAP
-    pub fn read_sensor(&self, address: &str) -> Result<Datum, String> {
+    pub fn read_sensor(info: &ServiceInfo) -> Result<Datum, String> {
         // send the minimum possible payload. We basically just want to ping the Sensor
         // see: https://stackoverflow.com/a/9734866
         let request = "GET / HTTP/1.1\r\n\r\n";
 
-        let response = State::send_request(address, request);
+        let response = State::send_request(info, request);
 
         println!(
-            "[read_sensor] response from url {}:\n----------\n{}\n----------",
-            address, response
+            "[read_sensor] response from url {}:{}\n----------\n{}\n----------",
+            info.get_hostname().trim_end_matches('.'),
+            info.get_port(),
+            response
         );
 
         // parse the response and return it
@@ -117,7 +127,7 @@ impl State {
     }
 
     #[allow(dead_code)] // remove this ASAP
-    pub fn command_actuator(&self, address: &str, command_json: String) -> std::io::Result<()> {
+    pub fn command_actuator(info: &ServiceInfo, command_json: String) -> std::io::Result<()> {
         let content_type = "application/json";
         let content_length = command_json.len();
 
@@ -127,54 +137,42 @@ impl State {
             content_type, content_length, command_json
         );
 
-        let response = State::send_request(address, request.as_str());
+        let response = State::send_request(info, request.as_str());
 
         println!(
-            "[command_actuator] response from url {}:\n----------\n{}\n----------",
-            address, response
+            "[command_actuator] response from url {}:{}\n----------\n{}\n----------",
+            info.get_hostname().trim_end_matches('.'),
+            info.get_port(),
+            response
         );
 
         Ok(())
     }
 
-    // pub fn poll(&self) {
-    //     for (id, addr) in self.sensors.iter().clone() {
-    //
-    //         let trimmed_host = addr.host.trim_end_matches('.');
-    //         let url = format!("{}:{}", trimmed_host, addr.port);
-    //
-    //         if let Ok(datum) = self.read_sensor(url.as_str()) {
-    //
-    //             // get existing history, if there is any
-    //             let thing: Option<SensorHistory> = self.histories.get(id).map(|b| b.clone())
-    //
-    //             let sensor_history = SensorHistory {
-    //                 id: id.clone(),
-    //                 data: vec![datum.clone()],
-    //             };
-    //
-    //             self.histories.push((history_id, sensor_history));
-    //
-    //             // TODO We need a way to compare Datums
-    //             // TODO replace with actual min/max values for a given sensor
-    //             // TODO Remove fake_data, this is just so the next section gets called.
-    //             let fake_data = 5.0;
-    //             if fake_data < 10.0 {
-    //                 // Get actuator address since Id is same for actuator/sensor pairings
-    //                 let addr = ctrl.actuators.get(id).unwrap();
-    //                 let trimmed_host = addr.host.trim_end_matches('.');
-    //                 let url = format!("{}:{}", trimmed_host, addr.port);
-    //
-    //                 // TODO Based on some logic we determine if we need the temp to go up or down
-    //                 // Create an actuator command and attempt to deserialize it for http transfer.
-    //                 let command = TemperatureActuatorCommand::SetMaxTemperature(100.0);
-    //                 let command_json = serde_json::to_string(&command).unwrap();
-    //
-    //                 ctrl.command_actuator(url.as_str(), command_json).unwrap()
-    //             }
-    //         }
-    //     }
-    // }
+    pub fn poll(&self) -> JoinHandle<()> {
+        let mutex = Arc::clone(&self.sensors);
+
+        std::thread::spawn(move || {
+            loop {
+                // We put the lock_result in this inner scope so the lock is released at the end of the scope
+                {
+                    let lock_result = mutex.lock();
+                    let mutex_guard = lock_result.unwrap();
+
+                    println!("known sensors: {}", mutex_guard.len());
+
+                    for (id, service_info) in mutex_guard.iter() {
+                        println!("[poll] polling sensor with id {}", id);
+
+                        Self::read_sensor(service_info).unwrap();
+                    }
+                }
+
+                // When the lock_result is released, we pause for a second, so self.sensors isn't continually locked
+                std::thread::sleep(Duration::from_secs(1))
+            }
+        })
+    }
 }
 
 #[allow(dead_code)] // remove ASAP
