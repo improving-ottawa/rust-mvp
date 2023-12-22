@@ -11,8 +11,8 @@ use device::Id;
 
 pub struct State {
     // histories: HashMap<Id, SensorHistory>,
-    sensors: Arc<Mutex<HashMap<Id, Address>>>,
-    actuators: Arc<Mutex<HashMap<Id, Address>>>,
+    sensors: Arc<Mutex<HashMap<Id, ServiceInfo>>>,
+    actuators: Arc<Mutex<HashMap<Id, ServiceInfo>>>,
 }
 
 impl Default for State {
@@ -30,7 +30,7 @@ impl State {
         Self::default()
     }
 
-    fn extract_id(info: ServiceInfo) -> Id {
+    fn extract_id(info: &ServiceInfo) -> Id {
         let id = info.get_property("id").unwrap().to_string();
 
         println!(
@@ -51,6 +51,7 @@ impl State {
         self.discover("_actuator")
     }
 
+    /// Creates a new thread to continually discover devices on the network in the specified group.
     fn discover(&self, group: &str) -> JoinHandle<()> {
         let devices = match group {
             "_sensor" => &self.sensors,
@@ -70,12 +71,9 @@ impl State {
 
             while let Ok(event) = receiver.recv() {
                 if let mdns_sd::ServiceEvent::ServiceResolved(info) = event {
-                    let address = Address::new(info.get_hostname(), info.get_port());
-                    let id = State::extract_id(info);
-
-                    // whenever we find something new on the network, remember it
+                    let id = State::extract_id(&info);
                     let devices = devices.lock();
-                    devices.unwrap().insert(id, address);
+                    devices.unwrap().insert(id, info);
                 }
             }
         })
@@ -177,23 +175,6 @@ impl State {
     //         }
     //     }
     // }
-}
-
-#[derive(Debug)]
-struct Address {
-    #[allow(dead_code)] // remove ASAP
-    host: String,
-    #[allow(dead_code)] // remove ASAP
-    port: String,
-}
-
-impl Address {
-    fn new(host: &str, port: u16) -> Self {
-        Self {
-            host: host.to_string(),
-            port: port.to_string(),
-        }
-    }
 }
 
 #[allow(dead_code)] // remove ASAP
